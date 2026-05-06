@@ -1,598 +1,45 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Heart, X, Moon, Sun, Maximize2, Grid, List, Share2, Bookmark, MessageCircle, User, Home, Compass, Settings, Bell, Menu, Mic, MoreVertical, Plus, Check, Trash2, ImagePlus, LogOut } from 'lucide-react';
-
-// === Firebase 相關匯入 ===
-import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
-
-// === Firebase 初始化 (使用您提供的 Config) ===
-const firebaseConfig = {
-  apiKey: "AIzaSyDhy2EaM0A5_UWBg3j3B4dTP9NWD3HytnM",
-  authDomain: "project-8325359529054686116.firebaseapp.com",
-  projectId: "project-8325359529054686116",
-  storageBucket: "project-8325359529054686116.firebasestorage.app",
-  messagingSenderId: "568949229288",
-  appId: "1:568949229288:web:f7de05f062ec94c4b82b5d",
-  measurementId: "G-MP4BTYZ49Q"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// 定義資料庫存取路徑常數
-const APP_ID = 'modern-collection-app';
-const categories = ['全部', '攝影', '科技', '藝術', '音樂', '生活', '古董'];
-
-// 觸覺回饋
-const triggerHaptic = (type = 'light') => {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    if (type === 'light') navigator.vibrate(10);
-    if (type === 'heavy') navigator.vibrate([20, 30, 20]);
-  }
-};
-
-export default function App() {
-  // === Firebase 驗證與資料狀態 ===
-  const [user, setUser] = useState(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [items, setItems] = useState([]);
-  
-  // === 系統狀態 ===
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('home');
-  const [showDrawer, setShowDrawer] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  
-  // === 內容狀態 ===
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('全部');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
-  
-  // === 互動狀態 ===
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [scrollDirection, setScrollDirection] = useState('up');
-  const [snackbars, setSnackbars] = useState([]);
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  const [selectedItems, setSelectedItems] = useState(new Set());
-  
-  const lastScrollY = useRef(0);
-  const touchStartY = useRef(0);
-  const [swipeY, setSwipeY] = useState(0);
-
-  // === 新增表單狀態 ===
-  const [newItem, setNewItem] = useState({ title: '', category: '生活', description: '', image: '', likes: 0, comments: [], isBookmarked: false });
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  // === 1. 監聽登入狀態 ===
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthChecking(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // === 2. 監聽 Firestore 資料 ===
-  useEffect(() => {
-    if (!user) {
-      setItems([]);
-      return;
-    }
-    // 遵守嚴格路徑規則: /artifacts/{appId}/users/{userId}/{collectionName}
-    const itemsRef = collection(db, 'artifacts', APP_ID, 'users', user.uid, 'items');
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0,aa user-scalable=no">
+    <title>現代收藏館</title>
     
-    // 不使用複雜查詢 (orderBy)，在前端記憶體中排序
-    const unsubscribe = onSnapshot(itemsRef, (snapshot) => {
-      const fetchedItems = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setItems(fetchedItems);
-    }, (error) => {
-      console.error("Firestore error:", error);
-      showSnackbar("資料讀取失敗，請確認資料庫權限設定");
-    });
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        md3: {
+                            l_bg: '#FAFDFD', l_surface: '#FAFDFD', l_surfaceContainer: '#ECEFEF', l_surfaceContainerHigh: '#E6E9E9',
+                            l_primary: '#006874', l_onPrimary: '#ffffff', l_primaryContainer: '#97F0FF', l_onPrimaryContainer: '#001F24',
+                            l_secondaryContainer: '#CCE8E7', l_onSecondaryContainer: '#051F1F', l_text: '#191C1C', l_textVariant: '#3F484A',
+                            l_outline: '#6F797A', l_outlineVariant: '#BFC8C9',
+                            d_bg: '#0E1414', d_surface: '#0E1414', d_surfaceContainer: '#1A2020', d_surfaceContainerHigh: '#252B2B',
+                            d_primary: '#4FD8EB', d_onPrimary: '#00363D', d_primaryContainer: '#004F58', d_onPrimaryContainer: '#97F0FF',
+                            d_secondaryContainer: '#334B4B', d_onSecondaryContainer: '#CCE8E7', d_text: '#E0E3E3', d_textVariant: '#BFC8C9',
+                            d_outline: '#899394', d_outlineVariant: '#3F484A',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-    return () => unsubscribe();
-  }, [user]);
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  // 監聽滾動以處理 MD3 AppBar 與 FAB 的動畫
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setIsScrolled(currentScrollY > 50);
-      if (currentScrollY > lastScrollY.current + 10) setScrollDirection('down');
-      else if (currentScrollY < lastScrollY.current - 10) setScrollDirection('up');
-      lastScrollY.current = currentScrollY;
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // === 登入與登出邏輯 ===
-  const handleGoogleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      showSnackbar("登入成功");
-    } catch (error) {
-      console.error("Login failed", error);
-      showSnackbar("登入失敗，請重試");
-    }
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    setShowDrawer(false);
-    showSnackbar("已登出");
-  };
-
-  // === 圖片 Base64 轉換 ===
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // 限制圖片大小避免 Base64 過大 (Firestore 單一文件限制 1MB)
-    if (file.size > 800 * 1024) {
-      showSnackbar("圖片過大，請選擇小於 800KB 的圖片");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setNewItem(prev => ({ ...prev, image: reader.result }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // === 新增收藏到 Firestore ===
-  const handleAddItem = async () => {
-    if (!newItem.title || !newItem.image) {
-      showSnackbar("請填寫標題並上傳圖片");
-      return;
-    }
-    if (!user) return;
-
-    setIsUploading(true);
-    try {
-      const itemsRef = collection(db, 'artifacts', APP_ID, 'users', user.uid, 'items');
-      await addDoc(itemsRef, {
-        ...newItem,
-        date: new Date().toISOString().split('T')[0],
-        timestamp: Date.now() // 用於前端排序
-      });
-      
-      showSnackbar("收藏新增成功！");
-      setShowAddModal(false);
-      setNewItem({ title: '', category: '生活', description: '', image: '', likes: 0, comments: [], isBookmarked: false });
-    } catch (error) {
-      console.error("Add item failed", error);
-      showSnackbar("新增失敗");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // === 更新/刪除邏輯 ===
-  const toggleLike = async (e, item) => {
-    if(e) e.stopPropagation();
-    if (!user) return;
-    triggerHaptic('heavy');
-    try {
-      const itemRef = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'items', item.id);
-      await updateDoc(itemRef, { likes: item.likes + 1 }); // 簡化邏輯，每次點擊+1
-    } catch(err) { console.error(err); }
-  };
-
-  const toggleBookmark = async (e, item) => {
-    if(e) e.stopPropagation();
-    if (!user) return;
-    triggerHaptic();
-    try {
-      const itemRef = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'items', item.id);
-      const newStatus = !item.isBookmarked;
-      await updateDoc(itemRef, { isBookmarked: newStatus });
-      showSnackbar(newStatus ? '已加入收藏夾' : '已從收藏夾移除');
-    } catch(err) { console.error(err); }
-  };
-
-  const deleteItems = async () => {
-    if (!user || selectedItems.size === 0) return;
-    triggerHaptic('heavy');
-    try {
-      for (let id of selectedItems) {
-        await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', user.uid, 'items', id));
-      }
-      showSnackbar(`已刪除 ${selectedItems.size} 件物品`);
-      setSelectedItems(new Set());
-      setIsMultiSelectMode(false);
-    } catch(err) { console.error(err); }
-  };
-
-  const showSnackbar = (message) => {
-    const id = Date.now();
-    setSnackbars(prev => [...prev, { id, message }]);
-    setTimeout(() => setSnackbars(prev => prev.filter(sb => sb.id !== id)), 3000);
-  };
-
-  const handleLongPress = (id) => {
-    triggerHaptic('heavy');
-    setIsMultiSelectMode(true);
-    toggleSelection(id);
-  };
-
-  const toggleSelection = (id) => {
-    setSelectedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      if (next.size === 0) setIsMultiSelectMode(false);
-      return next;
-    });
-  };
-
-  // === 資料處理與排序 (依規不在資料庫查詢排序) ===
-  const processedData = useMemo(() => {
-    let data = items.filter(item => {
-      const matchCat = activeCategory === '全部' || item.category === activeCategory;
-      const matchSearch = item.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchTab = activeTab === 'bookmarks' ? item.isBookmarked : true;
-      return matchCat && matchSearch && matchTab;
-    });
-    // 依據時間戳降冪排序 (最新的在前面)
-    return data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-  }, [items, searchQuery, activeCategory, activeTab]);
-
-  // === 手勢處理 ===
-  const handleTouchStart = (e) => { touchStartY.current = e.touches[0].clientY; };
-  const handleTouchMove = (e) => {
-    const diff = e.touches[0].clientY - touchStartY.current;
-    if (diff > 0) setSwipeY(diff);
-  };
-  const handleTouchEnd = (action) => {
-    if (swipeY > 150) {
-      triggerHaptic();
-      action();
-    }
-    setSwipeY(0);
-  };
-
-  // === MD3 色彩系統 ===
-  const md3 = {
-    l_bg: 'bg-[#FAFDFD]', l_surface: 'bg-[#FAFDFD]', l_surfaceContainer: 'bg-[#ECEFEF]', l_surfaceContainerHigh: 'bg-[#E6E9E9]',
-    l_primary: 'bg-[#006874]', l_onPrimary: 'text-white', l_primaryContainer: 'bg-[#97F0FF]', l_onPrimaryContainer: 'text-[#001F24]',
-    l_secondaryContainer: 'bg-[#CCE8E7]', l_onSecondaryContainer: 'text-[#051F1F]', l_text: 'text-[#191C1C]', l_textVariant: 'text-[#3F484A]',
-    l_outline: 'border-[#6F797A]', l_outlineVariant: 'border-[#BFC8C9]',
-    
-    d_bg: 'dark:bg-[#0E1414]', d_surface: 'dark:bg-[#0E1414]', d_surfaceContainer: 'dark:bg-[#1A2020]', d_surfaceContainerHigh: 'dark:bg-[#252B2B]',
-    d_primary: 'dark:bg-[#4FD8EB]', d_onPrimary: 'dark:text-[#00363D]', d_primaryContainer: 'dark:bg-[#004F58]', d_onPrimaryContainer: 'dark:text-[#97F0FF]',
-    d_secondaryContainer: 'dark:bg-[#334B4B]', d_onSecondaryContainer: 'dark:text-[#CCE8E7]', d_text: 'dark:text-[#E0E3E3]', d_textVariant: 'dark:text-[#BFC8C9]',
-    d_outline: 'dark:border-[#899394]', d_outlineVariant: 'dark:border-[#3F484A]',
-  };
-  const cx = (...classes) => classes.filter(Boolean).join(' ');
-
-  // === 登入畫面 (若未登入) ===
-  if (isAuthChecking) return <div className={cx("min-h-screen flex items-center justify-center", md3.l_bg, md3.d_bg)}><div className="animate-pulse">Loading...</div></div>;
-
-  if (!user) {
-    return (
-      <div className={cx("min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-500", isDarkMode ? 'dark' : '', md3.l_bg, md3.d_bg, md3.l_text, md3.d_text)}>
-        <Compass size={80} className={cx(md3.l_primaryContainer, md3.l_onPrimaryContainer, "p-4 rounded-[28px] mb-8")} />
-        <h1 className="text-4xl font-normal tracking-tight mb-4">現代收藏館</h1>
-        <p className={cx("text-center mb-12", md3.l_textVariant, md3.d_textVariant)}>
-          打造專屬於您的數位收藏空間。<br/>請登入以同步您的雲端資料庫。
-        </p>
-        <button 
-          onClick={handleGoogleLogin}
-          className={cx("flex items-center gap-3 px-6 py-4 rounded-full shadow-md active:scale-95 transition-all ripple", md3.l_primaryContainer, md3.l_onPrimaryContainer, md3.d_primaryContainer, md3.d_onPrimaryContainer)}
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24">
-            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-          </svg>
-          <span className="font-medium text-lg">使用 Google 帳號登入</span>
-        </button>
-
-        {/* 簡易切換日夜模式 (登入前) */}
-        <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-6 right-6 p-2 rounded-full border opacity-50">
-          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-      </div>
-    );
-  }
-
-  // === 主應用程式 (已登入) ===
-  return (
-    <div className={cx(`min-h-screen transition-colors duration-500 font-sans`, isDarkMode ? 'dark' : '', md3.l_bg, md3.d_bg, md3.l_text, md3.d_text)}>
-      
-      {/* --- 側邊導覽列 --- */}
-      {showDrawer && (
-        <div className="fixed inset-0 z-[100] flex">
-          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in" onClick={() => setShowDrawer(false)}></div>
-          <div className={cx(`relative w-80 h-full shadow-2xl flex flex-col transition-transform duration-300 animate-slide-right rounded-r-[28px]`, md3.l_surfaceContainer, md3.d_surfaceContainer)}>
-            <div className="p-6 pb-4 flex items-center gap-4">
-              <div className={cx("w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl", md3.l_primaryContainer, md3.l_onPrimaryContainer)}>{user.displayName?.[0] || 'U'}</div>
-              <div>
-                <h2 className="text-lg font-medium tracking-wide leading-tight">{user.displayName || '收藏家'}</h2>
-                <p className={cx("text-sm", md3.l_textVariant, md3.d_textVariant)}>{user.email}</p>
-              </div>
-            </div>
-            
-            <div className="px-3 space-y-1 mt-4">
-              <div className="h-px w-full my-2 bg-black/10 dark:bg-white/10"></div>
-              {/* MD3 Switch 開關 (深色模式) */}
-              <div className="w-full flex items-center justify-between px-4 py-4 rounded-full active:bg-black/10 dark:active:bg-white/10 transition-colors" onClick={() => {setIsDarkMode(!isDarkMode); triggerHaptic();}}>
-                <div className="flex items-center gap-3">
-                  {isDarkMode ? <Moon size={24} className={cx(md3.l_textVariant, md3.d_textVariant)} /> : <Sun size={24} className={cx(md3.l_textVariant, md3.d_textVariant)} />}
-                  <span className="font-medium text-[15px]">深色主題</span>
-                </div>
-                <div className={cx(`w-12 h-8 rounded-full flex items-center p-1 transition-colors`, isDarkMode ? md3.l_primary : md3.l_surfaceContainerHigh, isDarkMode ? md3.d_primary : md3.d_surfaceContainerHigh)}>
-                  <div className={cx(`w-6 h-6 rounded-full transition-transform`, isDarkMode ? 'translate-x-4 bg-[#00363D]' : 'translate-x-0 bg-[#6F797A] dark:bg-[#899394]')}></div>
-                </div>
-              </div>
-              
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-4 rounded-full text-red-500 active:bg-black/10 transition-colors mt-auto">
-                <LogOut size={24} />
-                <span className="font-medium text-[15px]">登出帳號</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- 多選模式 App Bar --- */}
-      {isMultiSelectMode && (
-        <div className={cx(`fixed top-0 w-full z-50 h-16 flex items-center justify-between px-4 animate-slide-down shadow-md`, md3.l_surfaceContainerHigh, md3.d_surfaceContainerHigh)}>
-          <div className="flex items-center gap-4">
-            <button onClick={() => {setIsMultiSelectMode(false); setSelectedItems(new Set());}} className="p-2 rounded-full active:bg-black/10"><X size={24} /></button>
-            <span className="text-lg font-medium">已選擇 {selectedItems.size} 項</span>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={deleteItems} className="p-2 rounded-full active:bg-black/10 text-red-500"><Trash2 size={24} /></button>
-          </div>
-        </div>
-      )}
-
-      {/* --- MD3 頂部應用列 --- */}
-      <header className={cx(`sticky top-0 z-40 w-full transition-all duration-300`, isScrolled ? cx('shadow-sm', md3.l_surfaceContainer, md3.d_surfaceContainer) : cx(md3.l_bg, md3.d_bg))}>
-        <div className="h-16 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={() => {setShowDrawer(true); triggerHaptic();}} className="p-2 -ml-2 rounded-full active:bg-black/10 ripple">
-              <Menu size={24} />
-            </button>
-            <h1 className={cx(`text-[22px] font-normal transition-opacity duration-300`, isScrolled ? 'opacity-100' : 'opacity-0')}>
-              {activeTab === 'home' ? '收藏館' : '我的收藏夾'}
-            </h1>
-          </div>
-          <button className="p-2 rounded-full active:bg-black/10"><User size={24} /></button>
-        </div>
-        <div className={cx(`px-4 transition-all duration-300 overflow-hidden`, isScrolled ? 'h-0 opacity-0' : 'h-[72px] opacity-100 flex items-end pb-4')}>
-          <h1 className="text-[32px] font-normal tracking-tight">{activeTab === 'home' ? '探索收藏' : '我的收藏夾'}</h1>
-        </div>
-      </header>
-
-      {/* --- 內容主體區 --- */}
-      <main className="container mx-auto px-4 pb-28 pt-2">
-        {activeTab === 'home' && (
-          <div className={cx(`flex items-center h-14 rounded-full px-4 mb-6 shadow-sm`, md3.l_surfaceContainerHigh, md3.d_surfaceContainerHigh)}>
-            <Search size={24} className={cx(md3.l_textVariant, md3.d_textVariant)} />
-            <input type="text" placeholder="搜尋你的收藏..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent border-none outline-none px-3 text-[16px]" />
-            {searchQuery && <button onClick={() => setSearchQuery('')} className="p-1 rounded-full"><X size={20}/></button>}
-          </div>
-        )}
-
-        {/* 分類標籤 */}
-        {activeTab === 'home' && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-4 snap-x">
-            {categories.map(cat => (
-              <button key={cat} onClick={() => {setActiveCategory(cat); triggerHaptic();}} className={cx(`snap-start flex items-center gap-1.5 h-8 px-4 rounded-lg border ripple`, activeCategory === cat ? cx(md3.l_secondaryContainer, md3.l_onSecondaryContainer, md3.d_secondaryContainer, md3.d_onSecondaryContainer, 'border-transparent') : cx('bg-transparent', md3.l_outlineVariant, md3.d_outlineVariant, md3.l_textVariant, md3.d_textVariant))}>
-                {activeCategory === cat && <Check size={16} />}
-                <span className="text-[14px] font-medium whitespace-nowrap">{cat}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mb-4">
-          <span className={cx(`text-[14px] font-medium`, md3.l_textVariant, md3.d_textVariant)}>共 {processedData.length} 件物品</span>
-          <button onClick={() => setViewMode(v => v==='grid'?'list':'grid')} className="p-2 rounded-full ripple">
-            {viewMode === 'grid' ? <List size={24} /> : <Grid size={24} />}
-          </button>
-        </div>
-
-        {/* 收藏品列表 */}
-        {processedData.length > 0 ? (
-          <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'}`}>
-            {processedData.map((item, index) => {
-              const isSelected = selectedItems.has(item.id);
-              return (
-                <div key={item.id} style={{ animationDelay: `${index * 50}ms` }} onClick={() => isMultiSelectMode ? toggleSelection(item.id) : setSelectedItem(item)} onContextMenu={(e) => {e.preventDefault(); handleLongPress(item.id);}} className={cx(`relative rounded-[24px] overflow-hidden transition-all duration-300 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border`, isSelected ? cx(md3.l_secondaryContainer, md3.d_secondaryContainer, md3.l_outline, md3.d_outline) : cx(md3.l_surfaceContainer, md3.d_surfaceContainer, 'border-transparent'), viewMode === 'list' && 'flex-row items-center p-3 gap-4')}>
-                  {isSelected && <div className="absolute inset-0 bg-black/20 z-10 flex items-center justify-center"><div className={cx(`w-10 h-10 rounded-full flex items-center justify-center`, md3.l_primary, md3.l_onPrimary, md3.d_primary, md3.d_onPrimary)}><Check size={24} /></div></div>}
-
-                  <div className={cx(`relative overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-800`, viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24 rounded-[16px]')}>
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
-                  </div>
-                  
-                  <div className={cx(`flex flex-col justify-between`, viewMode === 'grid' ? 'p-4 flex-1' : 'flex-1 py-1 pr-2')}>
-                    <div>
-                      <h3 className="font-medium text-[16px] leading-tight line-clamp-1">{item.title}</h3>
-                      <p className={cx(`text-[14px] line-clamp-2 leading-snug mb-3 mt-1`, md3.l_textVariant, md3.d_textVariant)}>{item.description}</p>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mt-auto">
-                      <button onClick={(e) => toggleLike(e, item)} className="flex items-center gap-1.5 p-1 -ml-1 rounded-full ripple group">
-                        <Heart size={20} className={cx(`transition-transform active:scale-75`, item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : cx(md3.l_textVariant, md3.d_textVariant))} />
-                        <span className="text-[12px] font-medium">{item.likes}</span>
-                      </button>
-                      <button onClick={(e) => toggleBookmark(e, item)} className="p-1 -mr-1 rounded-full ripple">
-                        <Bookmark size={20} className={cx(item.isBookmarked ? cx(md3.l_primary, md3.d_primary, 'fill-current') : cx(md3.l_textVariant, md3.d_textVariant))} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
-            <Compass size={64} className={cx(md3.l_textVariant, md3.d_textVariant, 'mb-4 opacity-50')} />
-            <h3 className="text-lg font-medium mb-1">找不到相關物品</h3>
-            <p className={cx("text-[14px]", md3.l_textVariant, md3.d_textVariant)}>點擊右下角按鈕新增您的第一個收藏！</p>
-          </div>
-        )}
-      </main>
-
-      {/* --- MD3 新增按鈕 FAB --- */}
-      <button 
-        className={cx(`fixed bottom-24 right-4 z-30 shadow-lg flex items-center justify-center transition-all duration-500 ripple hover:shadow-xl active:scale-95 rounded-[16px] h-14`, md3.l_primaryContainer, md3.l_onPrimaryContainer, md3.d_primaryContainer, md3.d_onPrimaryContainer, scrollDirection === 'down' && isScrolled ? 'translate-y-24 opacity-0' : 'translate-y-0 opacity-100', isScrolled ? 'w-14 px-0' : 'w-auto px-4')}
-        onClick={() => {triggerHaptic(); setShowAddModal(true);}}
-      >
-        <Plus size={24} className="shrink-0" />
-        <span className={cx(`font-medium ml-2 overflow-hidden whitespace-nowrap transition-all duration-300`, isScrolled ? 'w-0 opacity-0 ml-0' : 'w-10 opacity-100')}>新增</span>
-      </button>
-
-      {/* --- MD3 底部導覽列 --- */}
-      <nav className={cx(`fixed bottom-0 w-full z-40 pb-safe transition-transform duration-300`, md3.l_surfaceContainer, md3.d_surfaceContainer, scrollDirection === 'down' && isScrolled ? 'translate-y-full' : 'translate-y-0')}>
-        <div className="flex justify-around items-center h-[80px]">
-          <button onClick={() => {setActiveTab('home'); triggerHaptic();}} className="flex flex-col items-center gap-1 w-20 group relative overflow-hidden">
-            <div className={cx(`w-16 h-8 rounded-full flex items-center justify-center transition-colors duration-300`, activeTab === 'home' ? cx(md3.l_secondaryContainer, md3.d_secondaryContainer) : 'bg-transparent')}>
-              <Home size={24} className={cx(activeTab === 'home' ? cx(md3.l_onSecondaryContainer, md3.d_onSecondaryContainer, 'fill-current') : cx(md3.l_textVariant, md3.d_textVariant))} />
-            </div>
-            <span className={cx(`text-[12px] font-medium`, activeTab === 'home' ? cx(md3.l_text, md3.d_text) : cx(md3.l_textVariant, md3.d_textVariant))}>首頁</span>
-          </button>
-          
-          <button onClick={() => {setActiveTab('bookmarks'); triggerHaptic();}} className="flex flex-col items-center gap-1 w-20 group relative overflow-hidden">
-            <div className={cx(`w-16 h-8 rounded-full flex items-center justify-center transition-colors duration-300`, activeTab === 'bookmarks' ? cx(md3.l_secondaryContainer, md3.d_secondaryContainer) : 'bg-transparent')}>
-              <Bookmark size={24} className={cx(activeTab === 'bookmarks' ? cx(md3.l_onSecondaryContainer, md3.d_onSecondaryContainer, 'fill-current') : cx(md3.l_textVariant, md3.d_textVariant))} />
-            </div>
-            <span className={cx(`text-[12px] font-medium`, activeTab === 'bookmarks' ? cx(md3.l_text, md3.d_text) : cx(md3.l_textVariant, md3.d_textVariant))}>收藏</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* --- 彈出表單：新增收藏品 (BottomSheet) --- */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-end">
-          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in" onClick={() => setShowAddModal(false)}></div>
-          
-          <div 
-            onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={() => handleTouchEnd(() => setShowAddModal(false))}
-            style={{ transform: `translateY(${Math.max(0, swipeY)}px)`, transition: swipeY === 0 ? 'transform 0.4s cubic-bezier(0.2, 0, 0, 1)' : 'none' }}
-            className={cx(`relative w-full max-w-2xl mx-auto h-[90vh] rounded-t-[28px] shadow-2xl flex flex-col animate-slide-up overflow-hidden`, md3.l_surfaceContainer, md3.d_surfaceContainer)}
-          >
-            <div className="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab"><div className={cx(`w-8 h-1 rounded-full`, md3.l_outlineVariant, md3.d_outlineVariant)}></div></div>
-            
-            <div className="flex justify-between items-center px-6 pb-2 border-b border-black/10 dark:border-white/10 shrink-0">
-              <h2 className="text-[22px] font-normal">新增收藏</h2>
-              <button onClick={() => setShowAddModal(false)} className="p-2 rounded-full"><X size={24}/></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-safe">
-              {/* 圖片上傳區 */}
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className={cx("w-full aspect-video rounded-[24px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors", md3.l_outlineVariant, md3.d_outlineVariant, "hover:border-[#006874] dark:hover:border-[#4FD8EB]")}
-              >
-                {newItem.image ? (
-                  <img src={newItem.image} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <>
-                    <ImagePlus size={40} className={cx("mb-2", md3.l_textVariant, md3.d_textVariant)} />
-                    <span className={cx("font-medium", md3.l_textVariant, md3.d_textVariant)}>點擊上傳圖片 (建議小於 800KB)</span>
-                  </>
-                )}
-                <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-              </div>
-
-              {/* 表單欄位 */}
-              <div className="space-y-4">
-                <div>
-                  <label className={cx("block text-sm font-medium mb-1", md3.l_textVariant, md3.d_textVariant)}>標題 *</label>
-                  <input type="text" value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} className={cx("w-full h-14 px-4 rounded-xl outline-none", md3.l_surfaceContainerHigh, md3.d_surfaceContainerHigh)} placeholder="例如：復古底片相機" />
-                </div>
-                
-                <div>
-                  <label className={cx("block text-sm font-medium mb-1", md3.l_textVariant, md3.d_textVariant)}>分類</label>
-                  <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})} className={cx("w-full h-14 px-4 rounded-xl outline-none appearance-none", md3.l_surfaceContainerHigh, md3.d_surfaceContainerHigh)}>
-                    {categories.slice(1).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className={cx("block text-sm font-medium mb-1", md3.l_textVariant, md3.d_textVariant)}>描述故事</label>
-                  <textarea value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} className={cx("w-full p-4 rounded-xl outline-none resize-none h-32", md3.l_surfaceContainerHigh, md3.d_surfaceContainerHigh)} placeholder="寫下這件物品的特別之處..."></textarea>
-                </div>
-              </div>
-
-              <button 
-                onClick={handleAddItem} disabled={isUploading}
-                className={cx("w-full h-14 rounded-full font-medium text-lg flex items-center justify-center gap-2 transition-all active:scale-95", md3.l_primary, md3.l_onPrimary, md3.d_primary, md3.d_onPrimary, isUploading ? "opacity-70 cursor-not-allowed" : "")}
-              >
-                {isUploading ? "上傳中..." : "儲存收藏"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- 詳細資訊 (BottomSheet) --- */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-[100] flex items-end">
-          <div className="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in" onClick={() => setSelectedItem(null)}></div>
-          <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={() => handleTouchEnd(() => setSelectedItem(null))}
-            style={{ transform: `translateY(${Math.max(0, swipeY)}px)`, transition: swipeY === 0 ? 'transform 0.4s cubic-bezier(0.2, 0, 0, 1)' : 'none' }}
-            className={cx(`relative w-full max-w-2xl mx-auto h-[90vh] md:h-[85vh] rounded-t-[28px] shadow-2xl flex flex-col animate-slide-up overflow-hidden`, md3.l_surfaceContainer, md3.d_surfaceContainer)}
-          >
-            <div className="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab"><div className={cx(`w-8 h-1 rounded-full`, md3.l_outlineVariant, md3.d_outlineVariant)}></div></div>
-            <div className="flex-1 overflow-y-auto pb-safe">
-              <div className="w-full aspect-video bg-black shrink-0 relative"><img src={selectedItem.image} alt={selectedItem.title} className="w-full h-full object-contain" /></div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-[24px] font-normal leading-tight">{selectedItem.title}</h2>
-                  <button onClick={() => setSelectedItem(null)} className={cx(`p-2 rounded-full active:bg-black/10`, md3.l_textVariant, md3.d_textVariant)}><X size={24}/></button>
-                </div>
-                <div className="flex gap-2 mb-6">
-                  <span className={cx(`px-3 py-1 rounded-lg text-[14px] font-medium border`, md3.l_outlineVariant, md3.d_outlineVariant)}>{selectedItem.category}</span>
-                  <span className={cx(`px-3 py-1 rounded-lg text-[14px] font-medium border`, md3.l_outlineVariant, md3.d_outlineVariant)}>{selectedItem.date}</span>
-                </div>
-                <p className={cx(`text-[16px] leading-relaxed mb-8 whitespace-pre-wrap`, md3.l_textVariant, md3.d_textVariant)}>{selectedItem.description}</p>
-              </div>
-            </div>
-            {/* Bottom Action Bar */}
-            <div className={cx(`border-t px-4 py-3 flex justify-between items-center shrink-0`, md3.l_outlineVariant, md3.d_outlineVariant)}>
-              <div className="flex gap-2">
-                <button onClick={() => toggleLike(null, selectedItem)} className={cx(`px-4 py-2 rounded-full flex items-center gap-2 font-medium ripple`, selectedItem.likes > 0 ? cx(md3.l_secondaryContainer, md3.d_secondaryContainer) : '')}>
-                  <Heart size={20} className={selectedItem.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A] animate-pop' : ''} /> {selectedItem.likes} 喜歡
-                </button>
-                <button className="px-4 py-2 rounded-full flex items-center gap-2 font-medium ripple"><MessageCircle size={20}/> 留言</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MD3 Snackbars (Toast) --- */}
-      <div className="fixed bottom-24 left-4 right-4 z-[110] flex flex-col gap-2 pointer-events-none md:left-1/2 md:-translate-x-1/2 md:w-[400px]">
-        {snackbars.map(sb => (
-          <div key={sb.id} className="bg-[#313033] dark:bg-[#E6E1E5] text-[#F4EFF4] dark:text-[#313033] px-4 py-3.5 rounded-[4px] shadow-md flex justify-between items-center animate-slide-up pointer-events-auto">
-            <span className="text-[14px] font-medium">{sb.message}</span>
-            <button onClick={() => setSnackbars(p=>p.filter(x=>x.id!==sb.id))} className="text-[#D0BCFF] dark:text-[#6750A4] text-[14px] font-medium uppercase ml-4">關閉</button>
-          </div>
-        ))}
-      </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
+    <style>
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
         .ripple { position: relative; overflow: hidden; }
         .ripple::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
         .ripple:active::after { opacity: 0.12; }
+        
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.2, 0, 0, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -605,7 +52,769 @@ export default function App() {
         .animate-slide-right { animation: slideRight 0.3s cubic-bezier(0.2, 0, 0, 1) forwards; }
         @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
         .animate-pop { animation: pop 0.3s cubic-bezier(0.2, 0, 0, 1) forwards; }
-      `}} />
+
+        body {
+            transition: background-color 0.5s, color 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-md3-l_bg text-md3-l_text dark:bg-md3-d_bg dark:text-md3-d_text font-sans antialiased overflow-x-hidden">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 z-[200] flex items-center justify-center bg-md3-l_bg dark:bg-md3-d_bg transition-opacity duration-500">
+        <div class="animate-pulse text-lg font-medium">Loading...</div>
     </div>
-  );
-}
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="hidden min-h-screen flex-col items-center justify-center p-6 bg-md3-l_bg dark:bg-md3-d_bg relative z-[150]">
+        <div class="p-4 rounded-[28px] mb-8 bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer">
+            <i data-lucide="compass" class="w-20 h-20"></i>
+        </div>
+        <h1 class="text-4xl font-normal tracking-tight mb-4">現代收藏館</h1>
+        <p class="text-center mb-12 text-md3-l_textVariant dark:text-md3-d_textVariant">
+            打造專屬於您的數位收藏空間。<br/>請登入以同步您的雲端資料庫。
+        </p>
+        <button id="btn-login" class="flex items-center gap-3 px-6 py-4 rounded-full shadow-md active:scale-95 transition-all ripple bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer">
+            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            <span class="font-medium text-lg">使用 Google 帳號登入</span>
+        </button>
+        <button id="btn-toggle-theme-login" class="absolute top-6 right-6 p-2 rounded-full border opacity-50">
+            <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+            <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+        </button>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="hidden min-h-screen">
+        
+        <!-- App Bar (Scroll Driven) -->
+        <header id="top-app-bar" class="sticky top-0 z-40 w-full transition-all duration-300 bg-md3-l_bg dark:bg-md3-d_bg">
+            <div class="h-16 px-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button id="btn-open-drawer" class="p-2 -ml-2 rounded-full active:bg-black/10 dark:active:bg-white/10 ripple">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <h1 id="top-bar-title" class="text-[22px] font-normal transition-opacity duration-300 opacity-0">探索收藏</h1>
+                </div>
+                <button class="p-2 rounded-full active:bg-black/10 dark:active:bg-white/10">
+                    <i data-lucide="user" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="top-bar-large-title-container" class="px-4 transition-all duration-300 overflow-hidden h-[72px] opacity-100 flex items-end pb-4">
+                <h1 id="top-bar-large-title" class="text-[32px] font-normal tracking-tight">探索收藏</h1>
+            </div>
+        </header>
+
+        <!-- Multi-select Bar -->
+        <div id="multi-select-bar" class="hidden fixed top-0 w-full z-50 h-16 flex items-center justify-between px-4 animate-slide-down shadow-md bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh">
+            <div class="flex items-center gap-4">
+                <button id="btn-cancel-select" class="p-2 rounded-full active:bg-black/10 dark:active:bg-white/10">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+                <span id="select-count" class="text-lg font-medium">已選擇 0 項</span>
+            </div>
+            <div class="flex gap-2">
+                <button id="btn-delete-selected" class="p-2 rounded-full active:bg-black/10 dark:active:bg-white/10 text-red-500">
+                    <i data-lucide="trash-2" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <main class="container mx-auto px-4 pb-28 pt-2">
+            <!-- Search & Filters (Home Tab only) -->
+            <div id="home-controls">
+                <div class="flex items-center h-14 rounded-full px-4 mb-6 shadow-sm bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh">
+                    <i data-lucide="search" class="w-6 h-6 text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
+                    <input type="text" id="search-input" placeholder="搜尋你的收藏..." class="flex-1 bg-transparent border-none outline-none px-3 text-[16px]">
+                    <button id="btn-clear-search" class="hidden p-1 rounded-full active:bg-black/10 dark:active:bg-white/10"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div id="category-filters" class="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-4 snap-x">
+                    <!-- Categories injected via JS -->
+                </div>
+            </div>
+
+            <!-- View Toggle & Count -->
+            <div class="flex justify-between items-center mb-4">
+                <span id="item-count" class="text-[14px] font-medium text-md3-l_textVariant dark:text-md3-d_textVariant">共 0 件物品</span>
+                <button id="btn-toggle-view" class="p-2 rounded-full ripple">
+                    <i data-lucide="list" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Items Container -->
+            <div id="items-container" class="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <!-- Cards injected via JS -->
+            </div>
+        </main>
+
+        <!-- FAB -->
+        <button id="fab-add" class="fixed bottom-24 right-4 z-30 shadow-lg flex items-center justify-center transition-all duration-500 ripple hover:shadow-xl active:scale-95 rounded-[16px] h-14 w-auto px-4 bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer">
+            <i data-lucide="plus" class="w-6 h-6 shrink-0"></i>
+            <span class="font-medium ml-2 overflow-hidden whitespace-nowrap transition-all duration-300 w-10 opacity-100">新增</span>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottom-nav" class="fixed bottom-0 w-full z-40 pb-safe transition-transform duration-300 bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
+            <div class="flex justify-around items-center h-[80px]">
+                <button data-tab="home" class="nav-tab flex flex-col items-center gap-1 w-20 group relative overflow-hidden">
+                    <div class="nav-indicator w-16 h-8 rounded-full flex items-center justify-center transition-colors duration-300 bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer">
+                        <i data-lucide="home" class="w-6 h-6 text-md3-l_onSecondaryContainer dark:text-md3-d_onSecondaryContainer fill-current"></i>
+                    </div>
+                    <span class="nav-text text-[12px] font-medium text-md3-l_text dark:text-md3-d_text">首頁</span>
+                </button>
+                <button data-tab="bookmarks" class="nav-tab flex flex-col items-center gap-1 w-20 group relative overflow-hidden">
+                    <div class="nav-indicator w-16 h-8 rounded-full flex items-center justify-center transition-colors duration-300 bg-transparent">
+                        <i data-lucide="bookmark" class="w-6 h-6 text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
+                    </div>
+                    <span class="nav-text text-[12px] font-medium text-md3-l_textVariant dark:text-md3-d_textVariant">收藏</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Modals & Overlays -->
+    <!-- Drawer -->
+    <div id="drawer" class="hidden fixed inset-0 z-[100] flex">
+        <div id="drawer-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in"></div>
+        <div class="relative w-80 h-full shadow-2xl flex flex-col transition-transform duration-300 animate-slide-right rounded-r-[28px] bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
+            <div class="p-6 pb-4 flex items-center gap-4">
+                <div id="drawer-avatar" class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer">U</div>
+                <div>
+                    <h2 id="drawer-name" class="text-lg font-medium tracking-wide leading-tight">收藏家</h2>
+                    <p id="drawer-email" class="text-sm text-md3-l_textVariant dark:text-md3-d_textVariant">email@example.com</p>
+                </div>
+            </div>
+            <div class="px-3 space-y-1 mt-4 flex-1 flex flex-col">
+                <div class="h-px w-full my-2 bg-black/10 dark:bg-white/10"></div>
+                <div id="btn-toggle-theme" class="w-full flex items-center justify-between px-4 py-4 rounded-full active:bg-black/10 dark:active:bg-white/10 transition-colors cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="moon" class="w-6 h-6 dark:hidden text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
+                        <i data-lucide="sun" class="w-6 h-6 hidden dark:block text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
+                        <span class="font-medium text-[15px]">深色主題</span>
+                    </div>
+                    <div id="theme-switch-bg" class="w-12 h-8 rounded-full flex items-center p-1 transition-colors bg-md3-l_surfaceContainerHigh dark:bg-md3-d_primary">
+                        <div id="theme-switch-knob" class="w-6 h-6 rounded-full transition-transform translate-x-0 bg-[#6F797A] dark:bg-[#00363D]"></div>
+                    </div>
+                </div>
+                <button id="btn-logout" class="w-full flex items-center gap-3 px-4 py-4 rounded-full text-red-500 active:bg-black/10 dark:active:bg-white/10 transition-colors mt-auto">
+                    <i data-lucide="log-out" class="w-6 h-6"></i>
+                    <span class="font-medium text-[15px]">登出帳號</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="add-modal" class="hidden fixed inset-0 z-[100] flex items-end">
+        <div id="add-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in"></div>
+        <div id="add-sheet" class="relative w-full max-w-2xl mx-auto h-[90vh] rounded-t-[28px] shadow-2xl flex flex-col animate-slide-up overflow-hidden bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
+            <div class="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab touch-action-none" id="add-drag-handle">
+                <div class="w-8 h-1 rounded-full bg-md3-l_outlineVariant dark:bg-md3-d_outlineVariant"></div>
+            </div>
+            <div class="flex justify-between items-center px-6 pb-2 border-b border-black/10 dark:border-white/10 shrink-0">
+                <h2 class="text-[22px] font-normal">新增收藏</h2>
+                <button id="btn-close-add" class="p-2 rounded-full active:bg-black/10 dark:active:bg-white/10"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 pb-safe">
+                <!-- Image Upload -->
+                <div id="image-upload-area" class="w-full aspect-video rounded-[24px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-colors border-md3-l_outlineVariant dark:border-md3-d_outlineVariant hover:border-md3-l_primary dark:hover:border-md3-d_primary">
+                    <div id="upload-placeholder" class="flex flex-col items-center">
+                        <i data-lucide="image-plus" class="w-10 h-10 mb-2 text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
+                        <span class="font-medium text-md3-l_textVariant dark:text-md3-d_textVariant">點擊上傳圖片 (建議小於 800KB)</span>
+                    </div>
+                    <img id="upload-preview" src="" class="hidden w-full h-full object-cover">
+                    <input type="file" id="file-input" accept="image/*" class="hidden">
+                </div>
+                <!-- Form -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-md3-l_textVariant dark:text-md3-d_textVariant">標題 *</label>
+                        <input type="text" id="add-title" class="w-full h-14 px-4 rounded-xl outline-none bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh" placeholder="例如：復古底片相機">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-md3-l_textVariant dark:text-md3-d_textVariant">分類</label>
+                        <select id="add-category" class="w-full h-14 px-4 rounded-xl outline-none appearance-none bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh">
+                            <!-- Options injected via JS -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-md3-l_textVariant dark:text-md3-d_textVariant">描述故事</label>
+                        <textarea id="add-desc" class="w-full p-4 rounded-xl outline-none resize-none h-32 bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh" placeholder="寫下這件物品的特別之處..."></textarea>
+                    </div>
+                </div>
+                <button id="btn-submit-add" class="w-full h-14 rounded-full font-medium text-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-md3-l_primary text-md3-l_onPrimary dark:bg-md3-d_primary dark:text-md3-d_onPrimary">
+                    儲存收藏
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-[100] flex items-end">
+        <div id="detail-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 animate-fade-in"></div>
+        <div id="detail-sheet" class="relative w-full max-w-2xl mx-auto h-[90vh] md:h-[85vh] rounded-t-[28px] shadow-2xl flex flex-col animate-slide-up overflow-hidden bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
+            <div class="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab touch-action-none" id="detail-drag-handle">
+                <div class="w-8 h-1 rounded-full bg-md3-l_outlineVariant dark:bg-md3-d_outlineVariant"></div>
+            </div>
+            <div class="flex-1 overflow-y-auto pb-safe">
+                <div class="w-full aspect-video bg-black shrink-0 relative">
+                    <img id="detail-image" src="" class="w-full h-full object-contain">
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 id="detail-title" class="text-[24px] font-normal leading-tight"></h2>
+                        <button id="btn-close-detail" class="p-2 rounded-full active:bg-black/10 dark:active:bg-white/10 text-md3-l_textVariant dark:text-md3-d_textVariant"><i data-lucide="x" class="w-6 h-6"></i></button>
+                    </div>
+                    <div class="flex gap-2 mb-6">
+                        <span id="detail-category" class="px-3 py-1 rounded-lg text-[14px] font-medium border border-md3-l_outlineVariant dark:border-md3-d_outlineVariant"></span>
+                        <span id="detail-date" class="px-3 py-1 rounded-lg text-[14px] font-medium border border-md3-l_outlineVariant dark:border-md3-d_outlineVariant"></span>
+                    </div>
+                    <p id="detail-desc" class="text-[16px] leading-relaxed mb-8 whitespace-pre-wrap text-md3-l_textVariant dark:text-md3-d_textVariant"></p>
+                </div>
+            </div>
+            <!-- Action bar -->
+            <div class="border-t px-4 py-3 flex justify-between items-center shrink-0 border-md3-l_outlineVariant dark:border-md3-d_outlineVariant">
+                <div class="flex gap-2">
+                    <button id="btn-detail-like" class="px-4 py-2 rounded-full flex items-center gap-2 font-medium ripple">
+                        <i data-lucide="heart" id="detail-like-icon" class="w-5 h-5"></i> <span id="detail-like-count">0</span> 喜歡
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar Container -->
+    <div id="snackbar-container" class="fixed bottom-24 left-4 right-4 z-[110] flex flex-col gap-2 pointer-events-none md:left-1/2 md:-translate-x-1/2 md:w-[400px]">
+        <!-- Snackbars injected via JS -->
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // === Firebase Initialization ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyDhy2EaM0A5_UWBg3j3B4dTP9NWD3HytnM",
+            authDomain: "project-8325359529054686116.firebaseapp.com",
+            projectId: "project-8325359529054686116",
+            storageBucket: "project-8325359529054686116.firebasestorage.app",
+            messagingSenderId: "568949229288",
+            appId: "1:568949229288:web:f7de05f062ec94c4b82b5d"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const APP_ID = 'modern-collection-app';
+
+        // === State ===
+        let currentUser = null;
+        let items = [];
+        let isDarkMode = false;
+        let activeTab = 'home';
+        let searchQuery = '';
+        let activeCategory = '全部';
+        let viewMode = 'grid';
+        let isMultiSelectMode = false;
+        let selectedItems = new Set();
+        let currentDetailItem = null;
+        let unsubscribeSnapshot = null;
+        let base64Image = '';
+
+        const categories = ['全部', '攝影', '科技', '藝術', '音樂', '生活', '古董'];
+
+        // === DOM Elements ===
+        const els = {
+            loading: document.getElementById('loading-screen'),
+            login: document.getElementById('login-screen'),
+            mainApp: document.getElementById('main-app'),
+            topBar: document.getElementById('top-app-bar'),
+            topBarTitle: document.getElementById('top-bar-title'),
+            topBarLargeContainer: document.getElementById('top-bar-large-title-container'),
+            topBarLargeTitle: document.getElementById('top-bar-large-title'),
+            multiSelectBar: document.getElementById('multi-select-bar'),
+            selectCount: document.getElementById('select-count'),
+            homeControls: document.getElementById('home-controls'),
+            searchInput: document.getElementById('search-input'),
+            btnClearSearch: document.getElementById('btn-clear-search'),
+            categoryFilters: document.getElementById('category-filters'),
+            itemCount: document.getElementById('item-count'),
+            btnToggleView: document.getElementById('btn-toggle-view'),
+            itemsContainer: document.getElementById('items-container'),
+            fab: document.getElementById('fab-add'),
+            bottomNav: document.getElementById('bottom-nav'),
+            navTabs: document.querySelectorAll('.nav-tab'),
+            drawer: document.getElementById('drawer'),
+            addModal: document.getElementById('add-modal'),
+            detailModal: document.getElementById('detail-modal'),
+            snackbarContainer: document.getElementById('snackbar-container')
+        };
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // === Haptic Feedback ===
+        function triggerHaptic(type = 'light') {
+            if (navigator.vibrate) {
+                if (type === 'light') navigator.vibrate(10);
+                else navigator.vibrate([20, 30, 20]);
+            }
+        }
+
+        // === Snackbar ===
+        function showSnackbar(message) {
+            const id = Date.now();
+            const sb = document.createElement('div');
+            sb.className = 'bg-[#313033] dark:bg-[#E6E1E5] text-[#F4EFF4] dark:text-[#313033] px-4 py-3.5 rounded-[4px] shadow-md flex justify-between items-center animate-slide-up pointer-events-auto';
+            sb.innerHTML = `<span class="text-[14px] font-medium">${message}</span><button class="text-[#D0BCFF] dark:text-[#6750A4] text-[14px] font-medium uppercase ml-4">關閉</button>`;
+            sb.querySelector('button').onclick = () => sb.remove();
+            els.snackbarContainer.appendChild(sb);
+            setTimeout(() => { if (sb.parentNode) sb.remove(); }, 3000);
+        }
+
+        // === Theme Management ===
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-switch-bg')?.classList.replace('bg-md3-l_surfaceContainerHigh', 'bg-md3-d_primary');
+                document.getElementById('theme-switch-knob')?.classList.replace('translate-x-0', 'translate-x-4');
+                document.getElementById('theme-switch-knob')?.classList.replace('bg-[#6F797A]', 'bg-[#00363D]');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-switch-bg')?.classList.replace('bg-md3-d_primary', 'bg-md3-l_surfaceContainerHigh');
+                document.getElementById('theme-switch-knob')?.classList.replace('translate-x-4', 'translate-x-0');
+                document.getElementById('theme-switch-knob')?.classList.replace('bg-[#00363D]', 'bg-[#6F797A]');
+            }
+            triggerHaptic();
+        }
+        document.getElementById('btn-toggle-theme-login').onclick = toggleTheme;
+        document.getElementById('btn-toggle-theme').onclick = toggleTheme;
+
+        // === Auth Logic ===
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            els.loading.classList.add('hidden');
+            if (user) {
+                els.login.classList.add('hidden');
+                els.mainApp.classList.remove('hidden');
+                document.getElementById('drawer-avatar').innerText = user.displayName?.[0] || 'U';
+                document.getElementById('drawer-name').innerText = user.displayName || '收藏家';
+                document.getElementById('drawer-email').innerText = user.email || '';
+                setupFirestore();
+                renderUI();
+            } else {
+                els.login.classList.remove('hidden');
+                els.mainApp.classList.add('hidden');
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+                items = [];
+            }
+        });
+
+        document.getElementById('btn-login').onclick = async () => {
+            try {
+                await signInWithPopup(auth, new GoogleAuthProvider());
+                showSnackbar("登入成功");
+            } catch (err) {
+                showSnackbar("登入失敗");
+            }
+        };
+
+        document.getElementById('btn-logout').onclick = async () => {
+            await signOut(auth);
+            document.getElementById('drawer').classList.add('hidden');
+            showSnackbar("已登出");
+        };
+
+        // === Firestore Logic ===
+        function setupFirestore() {
+            if (!currentUser) return;
+            const itemsRef = collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items');
+            unsubscribeSnapshot = onSnapshot(itemsRef, (snapshot) => {
+                items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUI();
+            }, (error) => {
+                showSnackbar("資料讀取失敗");
+            });
+        }
+
+        // === Rendering Logic ===
+        function renderUI() {
+            // Render Categories
+            els.categoryFilters.innerHTML = '';
+            categories.forEach(cat => {
+                const isSelected = activeCategory === cat;
+                const btn = document.createElement('button');
+                btn.className = `snap-start flex items-center gap-1.5 h-8 px-4 rounded-lg border ripple transition-all ${
+                    isSelected ? 'bg-md3-l_secondaryContainer text-md3-l_onSecondaryContainer dark:bg-md3-d_secondaryContainer dark:text-md3-d_onSecondaryContainer border-transparent' 
+                               : 'bg-transparent border-md3-l_outlineVariant dark:border-md3-d_outlineVariant text-md3-l_textVariant dark:text-md3-d_textVariant'
+                }`;
+                btn.innerHTML = `${isSelected ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}<span class="text-[14px] font-medium whitespace-nowrap">${cat}</span>`;
+                btn.onclick = () => { activeCategory = cat; triggerHaptic(); renderUI(); };
+                els.categoryFilters.appendChild(btn);
+            });
+
+            // Process Data
+            let processed = items.filter(item => {
+                const matchCat = activeCategory === '全部' || item.category === activeCategory;
+                const matchSearch = (item.title || '').toLowerCase().includes(searchQuery.toLowerCase());
+                const matchTab = activeTab === 'bookmarks' ? item.isBookmarked : true;
+                return matchCat && matchSearch && matchTab;
+            });
+            processed.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            els.itemCount.innerText = `共 ${processed.length} 件物品`;
+
+            // Render Items
+            els.itemsContainer.className = `grid gap-4 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'}`;
+            els.itemsContainer.innerHTML = '';
+
+            if (processed.length === 0) {
+                els.itemsContainer.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-20 animate-fade-in text-md3-l_textVariant dark:text-md3-d_textVariant">
+                        <i data-lucide="compass" class="w-16 h-16 mb-4 opacity-50"></i>
+                        <h3 class="text-lg font-medium mb-1">找不到相關物品</h3>
+                    </div>`;
+            }
+
+            processed.forEach((item, idx) => {
+                const isSelected = selectedItems.has(item.id);
+                const card = document.createElement('div');
+                card.style.animationDelay = `${idx * 50}ms`;
+                card.className = `relative rounded-[24px] overflow-hidden transition-all duration-300 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border ${
+                    isSelected ? 'bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer border-md3-l_outline dark:border-md3-d_outline' 
+                               : 'bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer border-transparent'
+                } ${viewMode === 'list' ? 'flex-row items-center p-3 gap-4' : ''}`;
+                
+                card.innerHTML = `
+                    ${isSelected ? `<div class="absolute inset-0 bg-black/20 z-10 flex items-center justify-center"><div class="w-10 h-10 rounded-full flex items-center justify-center bg-md3-l_primary text-md3-l_onPrimary dark:bg-md3-d_primary dark:text-md3-d_onPrimary"><i data-lucide="check" class="w-6 h-6"></i></div></div>` : ''}
+                    <div class="relative overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-800 ${viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24 rounded-[16px]'}">
+                        <img src="${item.image}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex flex-col justify-between ${viewMode === 'grid' ? 'p-4 flex-1' : 'flex-1 py-1 pr-2'}">
+                        <div>
+                            <h3 class="font-medium text-[16px] leading-tight line-clamp-1">${item.title}</h3>
+                            <p class="text-[14px] line-clamp-2 leading-snug mb-3 mt-1 text-md3-l_textVariant dark:text-md3-d_textVariant">${item.description}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-auto text-md3-l_textVariant dark:text-md3-d_textVariant">
+                            <button data-action="like" data-id="${item.id}" class="flex items-center gap-1.5 p-1 -ml-1 rounded-full ripple relative z-20">
+                                <i data-lucide="heart" class="w-5 h-5 transition-transform active:scale-75 ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}"></i>
+                                <span class="text-[12px] font-medium">${item.likes || 0}</span>
+                            </button>
+                            <button data-action="bookmark" data-id="${item.id}" class="p-1 -mr-1 rounded-full ripple relative z-20">
+                                <i data-lucide="bookmark" class="w-5 h-5 ${item.isBookmarked ? 'fill-md3-l_primary text-md3-l_primary dark:fill-md3-d_primary dark:text-md3-d_primary' : ''}"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Events
+                card.onclick = (e) => {
+                    // Prevent card click if action button was clicked
+                    if(e.target.closest('button[data-action]')) return;
+                    
+                    if (isMultiSelectMode) {
+                        toggleSelection(item.id);
+                    } else {
+                        openDetail(item);
+                    }
+                };
+                card.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    triggerHaptic('heavy');
+                    isMultiSelectMode = true;
+                    toggleSelection(item.id);
+                };
+
+                els.itemsContainer.appendChild(card);
+            });
+
+            // Attach actions
+            document.querySelectorAll('button[data-action="like"]').forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    triggerHaptic('heavy');
+                    const id = btn.dataset.id;
+                    const item = items.find(i => i.id === id);
+                    if(!item || !currentUser) return;
+                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { likes: (item.likes || 0) + 1 });
+                };
+            });
+            document.querySelectorAll('button[data-action="bookmark"]').forEach(btn => {
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    triggerHaptic();
+                    const id = btn.dataset.id;
+                    const item = items.find(i => i.id === id);
+                    if(!item || !currentUser) return;
+                    const newStatus = !item.isBookmarked;
+                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { isBookmarked: newStatus });
+                    showSnackbar(newStatus ? '已加入收藏夾' : '已從收藏夾移除');
+                };
+            });
+
+            // Update App Bars
+            if (isMultiSelectMode) {
+                els.multiSelectBar.classList.remove('hidden');
+                els.selectCount.innerText = `已選擇 ${selectedItems.size} 項`;
+            } else {
+                els.multiSelectBar.classList.add('hidden');
+            }
+
+            lucide.createIcons();
+        }
+
+        function toggleSelection(id) {
+            if (selectedItems.has(id)) selectedItems.delete(id);
+            else selectedItems.add(id);
+            if (selectedItems.size === 0) isMultiSelectMode = false;
+            renderUI();
+        }
+
+        document.getElementById('btn-cancel-select').onclick = () => {
+            isMultiSelectMode = false;
+            selectedItems.clear();
+            renderUI();
+        };
+
+        document.getElementById('btn-delete-selected').onclick = async () => {
+            if (!currentUser || selectedItems.size === 0) return;
+            triggerHaptic('heavy');
+            for (let id of selectedItems) {
+                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id));
+            }
+            showSnackbar(`已刪除 ${selectedItems.size} 件物品`);
+            selectedItems.clear();
+            isMultiSelectMode = false;
+            renderUI();
+        };
+
+        // === Interactions (Tabs, Search, View) ===
+        els.navTabs.forEach(tab => {
+            tab.onclick = () => {
+                activeTab = tab.dataset.tab;
+                triggerHaptic();
+                
+                // Update active styles
+                els.navTabs.forEach(t => {
+                    const indicator = t.querySelector('.nav-indicator');
+                    const text = t.querySelector('.nav-text');
+                    const icon = t.querySelector('i');
+                    if (t.dataset.tab === activeTab) {
+                        indicator.classList.add('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer');
+                        indicator.classList.remove('bg-transparent');
+                        text.classList.add('text-md3-l_text', 'dark:text-md3-d_text');
+                        text.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                        icon.classList.add('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
+                        icon.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                    } else {
+                        indicator.classList.remove('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer');
+                        indicator.classList.add('bg-transparent');
+                        text.classList.remove('text-md3-l_text', 'dark:text-md3-d_text');
+                        text.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                        icon.classList.remove('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
+                        icon.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                    }
+                });
+
+                els.homeControls.style.display = activeTab === 'home' ? 'block' : 'none';
+                els.topBarTitle.innerText = activeTab === 'home' ? '收藏館' : '我的收藏夾';
+                els.topBarLargeTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
+                renderUI();
+            };
+        });
+
+        els.searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            els.btnClearSearch.style.display = searchQuery ? 'block' : 'none';
+            renderUI();
+        });
+        els.btnClearSearch.onclick = () => {
+            searchQuery = '';
+            els.searchInput.value = '';
+            els.btnClearSearch.style.display = 'none';
+            renderUI();
+        };
+
+        els.btnToggleView.onclick = () => {
+            viewMode = viewMode === 'grid' ? 'list' : 'grid';
+            els.btnToggleView.innerHTML = `<i data-lucide="${viewMode === 'grid' ? 'list' : 'grid'}" class="w-6 h-6"></i>`;
+            triggerHaptic();
+            renderUI();
+        };
+
+        // === Scroll Handling ===
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            const isScrolled = currentScrollY > 50;
+            
+            // App Bar
+            if (isScrolled) {
+                els.topBar.classList.add('shadow-sm', 'bg-md3-l_surfaceContainer', 'dark:bg-md3-d_surfaceContainer');
+                els.topBar.classList.remove('bg-md3-l_bg', 'dark:bg-md3-d_bg');
+                els.topBarTitle.classList.remove('opacity-0');
+                els.topBarLargeContainer.classList.add('h-0', 'opacity-0');
+                els.topBarLargeContainer.classList.remove('h-[72px]', 'opacity-100');
+            } else {
+                els.topBar.classList.remove('shadow-sm', 'bg-md3-l_surfaceContainer', 'dark:bg-md3-d_surfaceContainer');
+                els.topBar.classList.add('bg-md3-l_bg', 'dark:bg-md3-d_bg');
+                els.topBarTitle.classList.add('opacity-0');
+                els.topBarLargeContainer.classList.remove('h-0', 'opacity-0');
+                els.topBarLargeContainer.classList.add('h-[72px]', 'opacity-100');
+            }
+
+            // FAB & Bottom Nav
+            if (currentScrollY > lastScrollY.current + 10 && isScrolled) { // Down
+                els.fab.classList.add('translate-y-24', 'opacity-0');
+                els.bottomNav.classList.add('translate-y-full');
+            } else if (currentScrollY < lastScrollY.current - 10) { // Up
+                els.fab.classList.remove('translate-y-24', 'opacity-0');
+                els.bottomNav.classList.remove('translate-y-full');
+            }
+            
+            // FAB shrink
+            if(isScrolled) {
+                els.fab.classList.add('w-14', 'px-0');
+                els.fab.querySelector('span').classList.add('w-0', 'opacity-0', 'ml-0');
+            } else {
+                els.fab.classList.remove('w-14', 'px-0');
+                els.fab.querySelector('span').classList.remove('w-0', 'opacity-0', 'ml-0');
+            }
+
+            lastScrollY.current = currentScrollY;
+        }, { passive: true });
+        lastScrollY.current = 0;
+
+        // === Modals & Drawers ===
+        document.getElementById('btn-open-drawer').onclick = () => els.drawer.classList.remove('hidden');
+        document.getElementById('drawer-scrim').onclick = () => els.drawer.classList.add('hidden');
+
+        // Add Modal
+        const selectCat = document.getElementById('add-category');
+        categories.slice(1).forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat; opt.innerText = cat;
+            selectCat.appendChild(opt);
+        });
+
+        els.fab.onclick = () => { triggerHaptic(); els.addModal.classList.remove('hidden'); };
+        document.getElementById('add-scrim').onclick = () => els.addModal.classList.add('hidden');
+        document.getElementById('btn-close-add').onclick = () => els.addModal.classList.add('hidden');
+
+        document.getElementById('image-upload-area').onclick = () => document.getElementById('file-input').click();
+        document.getElementById('file-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            if (file.size > 800 * 1024) { showSnackbar("圖片過大，請選擇小於 800KB"); return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+                base64Image = reader.result;
+                document.getElementById('upload-preview').src = base64Image;
+                document.getElementById('upload-preview').classList.remove('hidden');
+                document.getElementById('upload-placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('btn-submit-add').onclick = async (e) => {
+            const btn = e.target;
+            const title = document.getElementById('add-title').value;
+            const cat = document.getElementById('add-category').value;
+            const desc = document.getElementById('add-desc').value;
+
+            if(!title || !base64Image) { showSnackbar("請填寫標題並上傳圖片"); return; }
+            if(!currentUser) return;
+
+            btn.disabled = true;
+            btn.innerText = "上傳中...";
+            try {
+                await addDoc(collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items'), {
+                    title: title, category: cat, description: desc, image: base64Image, likes: 0, isBookmarked: false,
+                    date: new Date().toISOString().split('T')[0], timestamp: Date.now()
+                });
+                showSnackbar("收藏新增成功！");
+                els.addModal.classList.add('hidden');
+                // Reset form
+                document.getElementById('add-title').value = '';
+                document.getElementById('add-desc').value = '';
+                base64Image = '';
+                document.getElementById('upload-preview').classList.add('hidden');
+                document.getElementById('upload-placeholder').classList.remove('hidden');
+            } catch(err) {
+                showSnackbar("新增失敗");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "儲存收藏";
+            }
+        };
+
+        // Detail Modal
+        function openDetail(item) {
+            triggerHaptic();
+            currentDetailItem = item;
+            document.getElementById('detail-image').src = item.image;
+            document.getElementById('detail-title').innerText = item.title;
+            document.getElementById('detail-category').innerText = item.category;
+            document.getElementById('detail-date').innerText = item.date;
+            document.getElementById('detail-desc').innerText = item.description;
+            document.getElementById('detail-like-count').innerText = item.likes || 0;
+            
+            const likeIcon = document.getElementById('detail-like-icon');
+            if (item.likes > 0) {
+                likeIcon.classList.add('fill-[#BA1A1A]', 'text-[#BA1A1A]');
+            } else {
+                likeIcon.classList.remove('fill-[#BA1A1A]', 'text-[#BA1A1A]');
+            }
+            
+            els.detailModal.classList.remove('hidden');
+        }
+
+        document.getElementById('detail-scrim').onclick = () => els.detailModal.classList.add('hidden');
+        document.getElementById('btn-close-detail').onclick = () => els.detailModal.classList.add('hidden');
+
+        document.getElementById('btn-detail-like').onclick = async () => {
+            if(!currentDetailItem || !currentUser) return;
+            triggerHaptic('heavy');
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', currentDetailItem.id), { likes: (currentDetailItem.likes || 0) + 1 });
+            // The snapshot will trigger renderUI, but we also need to update the modal manually for immediate feedback
+            document.getElementById('detail-like-count').innerText = (currentDetailItem.likes || 0) + 1;
+            document.getElementById('detail-like-icon').classList.add('fill-[#BA1A1A]', 'text-[#BA1A1A]', 'animate-pop');
+            setTimeout(() => document.getElementById('detail-like-icon').classList.remove('animate-pop'), 300);
+        };
+
+        // Swipe to dismiss helper
+        function setupSwipeToDismiss(handleId, sheetId, modalId) {
+            const handle = document.getElementById(handleId);
+            const sheet = document.getElementById(sheetId);
+            const modal = document.getElementById(modalId);
+            let startY = 0;
+            let currentY = 0;
+
+            handle.addEventListener('touchstart', e => { startY = e.touches[0].clientY; sheet.style.transition = 'none'; }, {passive: true});
+            handle.addEventListener('touchmove', e => {
+                const diff = e.touches[0].clientY - startY;
+                if(diff > 0) { currentY = diff; sheet.style.transform = `translateY(${diff}px)`; }
+            }, {passive: true});
+            handle.addEventListener('touchend', () => {
+                sheet.style.transition = 'transform 0.4s cubic-bezier(0.2, 0, 0, 1)';
+                if(currentY > 150) {
+                    triggerHaptic();
+                    modal.classList.add('hidden');
+                }
+                sheet.style.transform = 'translateY(0)';
+                currentY = 0;
+            });
+        }
+        setupSwipeToDismiss('add-drag-handle', 'add-sheet', 'add-modal');
+        setupSwipeToDismiss('detail-drag-handle', 'detail-sheet', 'detail-modal');
+
+    </script>
+</body>
+</html>
