@@ -41,12 +41,12 @@
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
         
-        /* 點擊水波紋 */
+        /* M3 漣漪水波紋 */
         .ripple { position: relative; overflow: hidden; }
         .ripple::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
         .ripple:active::after { opacity: 0.12; }
         
-        /* M3 彈簧過渡 */
+        /* 彈簧回彈效果 */
         .transition-spring {
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -57,15 +57,15 @@
         /* 飄浮光暈動畫 */
         @keyframes blob-float {
             0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.15); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
             100% { transform: translate(0px, 0px) scale(1); }
         }
         .animate-blob {
-            animation: blob-float 10s infinite ease-in-out;
+            animation: blob-float 12s infinite ease-in-out;
         }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
+        .animation-delay-2000 { animation-delay: 2.5s; }
+        .animation-delay-4000 { animation-delay: 5s; }
 
         /* 骨架屏閃爍 */
         @keyframes shimmer {
@@ -82,11 +82,11 @@
             background-image: linear-gradient(
                 90deg,
                 rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.15) 20%,
-                rgba(255, 255, 255, 0.3) 60%,
+                rgba(255, 255, 255, 0.2) 20%,
+                rgba(255, 255, 255, 0.4) 60%,
                 rgba(255, 255, 255, 0) 100%
             );
-            animation: shimmer 1.6s infinite;
+            animation: shimmer 1.5s infinite;
             content: '';
         }
         .dark .shimmer-bg::after {
@@ -99,14 +99,26 @@
             );
         }
 
+        /* 點讚大愛心噴發動畫 */
+        @keyframes heart-burst {
+            0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+            70% { transform: scale(0.9) rotate(-5deg); opacity: 1; }
+            100% { transform: scale(0) rotate(0deg); opacity: 0; }
+        }
+        .animate-heart-burst {
+            animation: heart-burst 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
         body {
-            transition: background-color 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: background-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
     </style>
 </head>
 <body class="bg-md3-l_bg text-md3-l_text dark:bg-md3-d_bg dark:text-md3-d_text font-sans antialiased overflow-x-hidden min-h-screen">
 
-    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-60 dark:opacity-40 transition-opacity duration-1000">
+    <!-- 背景動態流暢光暈 -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none opacity-50 dark:opacity-30 transition-opacity duration-1000">
         <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl animate-blob bg-[#97F0FF]"></div>
         <div class="absolute top-1/4 -right-40 w-[450px] h-[450px] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000 bg-[#CCE8E7]"></div>
         <div class="absolute -bottom-40 left-10 w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000 bg-[#E6E9E9]/40"></div>
@@ -125,21 +137,27 @@
     <div id="login-screen" class="hidden fixed inset-0 flex flex-col items-center justify-center p-6 bg-md3-l_bg dark:bg-md3-d_bg z-[150] transition-all duration-700 ease-m3-standard">
         <div class="max-w-md w-full flex flex-col items-center p-8 rounded-[36px] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-xl shadow-2xl transition-all hover:scale-[1.01]">
             <div class="p-6 rounded-[28px] mb-8 bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer shadow-lg shadow-md3-l_primary/10">
-                <i data-lucide="compass" class="w-20 h-20 animate-spin-slow"></i>
+                <i data-lucide="compass" class="w-16 h-16 animate-pulse"></i>
             </div>
             <h1 class="text-4xl font-light tracking-tight mb-4 text-center">現代收藏館</h1>
-            <p class="text-center mb-12 text-md3-l_textVariant dark:text-md3-d_textVariant max-w-xs text-[15px] leading-relaxed">
+            <p class="text-center mb-10 text-md3-l_textVariant dark:text-md3-d_textVariant max-w-xs text-[15px] leading-relaxed">
                 打造專屬於您的數位收藏空間。<br/>請登入以同步您的雲端資料庫。
             </p>
-            <button id="btn-login" class="w-full flex items-center justify-center gap-4 px-6 py-4.5 rounded-full shadow-lg active:scale-95 hover:shadow-xl transition-all duration-300 ripple bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer hover:brightness-105">
-                <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                <span class="font-semibold text-base">使用 Google 帳號登入</span>
-            </button>
+            <div class="w-full space-y-3">
+                <button id="btn-login" class="w-full flex items-center justify-center gap-4 px-6 py-4.5 rounded-full shadow-lg active:scale-95 hover:shadow-xl transition-all duration-300 ripple bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer hover:brightness-105">
+                    <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                    <span class="font-semibold text-base">使用 Google 帳號登入</span>
+                </button>
+                <button id="btn-guest-login" class="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-md3-l_outlineVariant/30 dark:border-md3-d_outlineVariant/30 active:scale-95 transition-all text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/5 text-md3-l_textVariant dark:text-md3-d_textVariant">
+                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                    <span>以訪客身份體驗（免登入預覽）</span>
+                </button>
+            </div>
         </div>
         <button id="btn-toggle-theme-login" class="absolute top-6 right-6 p-3 rounded-full border border-md3-l_outlineVariant/30 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all">
             <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
@@ -150,7 +168,7 @@
     <!-- Main App -->
     <div id="main-app" class="hidden opacity-0 transform translate-y-8 transition-all duration-700 ease-m3-standard relative z-10">
         
-        <!-- App Bar (Scroll Driven & Blur) -->
+        <!-- App Bar -->
         <header id="top-app-bar" class="sticky top-0 z-40 w-full transition-all duration-500 backdrop-blur-lg bg-md3-l_bg/80 dark:bg-md3-d_bg/80 border-b border-transparent">
             <div class="h-16 px-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -184,7 +202,7 @@
         </div>
 
         <main class="container mx-auto px-4 pb-28 pt-2 max-w-5xl">
-            <!-- Search & Filters (Home Tab only) -->
+            <!-- Search & Filters -->
             <div id="home-controls" class="transition-all duration-500">
                 <div class="flex items-center h-14 rounded-full px-4 mb-6 shadow-sm border border-transparent focus-within:border-md3-l_primary/20 focus-within:ring-4 focus-within:ring-md3-l_primary/5 dark:focus-within:ring-md3-d_primary/5 transition-all bg-md3-l_surfaceContainerHigh dark:bg-md3-d_surfaceContainerHigh">
                     <i data-lucide="search" class="w-6 h-6 text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
@@ -236,8 +254,8 @@
         </nav>
     </div>
 
-    <!-- Drawer -->
-    <div id="drawer" class="fixed inset-0 z-[100] flex opacity-0 pointer-events-none transition-opacity duration-500">
+    <!-- Drawer (側邊欄) -->
+    <div id="drawer" class="fixed inset-0 z-[100] flex opacity-0 pointer-events-none transition-all duration-500">
         <div id="drawer-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-500 opacity-0"></div>
         <div class="relative w-80 h-full shadow-2xl flex flex-col transition-transform duration-500 transform -translate-x-full rounded-r-[32px] bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
             <div class="p-6 pb-4 flex items-center gap-4">
@@ -268,7 +286,7 @@
     </div>
 
     <!-- Add Modal -->
-    <div id="add-modal" class="fixed inset-0 z-[100] flex items-end opacity-0 pointer-events-none transition-opacity duration-500">
+    <div id="add-modal" class="fixed inset-0 z-[100] flex items-end opacity-0 pointer-events-none transition-all duration-500">
         <div id="add-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-500 opacity-0"></div>
         <div id="add-sheet" class="relative w-full max-w-2xl mx-auto h-[90vh] rounded-t-[32px] shadow-2xl flex flex-col transition-transform duration-500 transform translate-y-full bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
             <div class="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab touch-action-none" id="add-drag-handle">
@@ -283,7 +301,7 @@
                 <div id="image-upload-area" class="w-full aspect-video rounded-[28px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all duration-300 border-md3-l_outlineVariant/50 dark:border-md3-d_outlineVariant/50 hover:border-md3-l_primary dark:hover:border-md3-d_primary bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10">
                     <div id="upload-placeholder" class="flex flex-col items-center p-4">
                         <i data-lucide="image-plus" class="w-10 h-10 mb-2 text-md3-l_textVariant dark:text-md3-d_textVariant"></i>
-                        <span class="font-medium text-md3-l_textVariant dark:text-md3-d_textVariant text-sm">點擊上傳圖片 (建議小於 800KB)</span>
+                        <span class="font-medium text-md3-l_textVariant dark:text-md3-d_textVariant text-sm">點擊上傳圖片 (自動壓縮防出錯)</span>
                     </div>
                     <img id="upload-preview" src="" class="hidden w-full h-full object-cover">
                     <input type="file" id="file-input" accept="image/*" class="hidden">
@@ -313,7 +331,7 @@
     </div>
 
     <!-- Detail Modal -->
-    <div id="detail-modal" class="fixed inset-0 z-[100] flex items-end opacity-0 pointer-events-none transition-opacity duration-500">
+    <div id="detail-modal" class="fixed inset-0 z-[100] flex items-end opacity-0 pointer-events-none transition-all duration-500">
         <div id="detail-scrim" class="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-500 opacity-0"></div>
         <div id="detail-sheet" class="relative w-full max-w-2xl mx-auto h-[90vh] md:h-[85vh] rounded-t-[32px] shadow-2xl flex flex-col transition-transform duration-500 transform translate-y-full bg-md3-l_surfaceContainer dark:bg-md3-d_surfaceContainer">
             <div class="w-full flex justify-center pt-4 pb-2 shrink-0 cursor-grab touch-action-none" id="detail-drag-handle">
@@ -373,6 +391,7 @@
 
         // === State ===
         let currentUser = null;
+        let isGuestMode = false;
         let items = [];
         let isDarkMode = false;
         let activeTab = 'home';
@@ -384,9 +403,15 @@
         let currentDetailItem = null;
         let unsubscribeSnapshot = null;
         let base64Image = '';
-        let lastScrollY = 0; // 修正 ReferenceError 的全域變數宣告
+        let lastScrollY = 0; 
+        let lastTapTime = 0; // 用於雙擊檢測
 
         const categories = ['全部', '攝影', '科技', '藝術', '音樂', '生活', '古董'];
+
+        const defaultMockItems = [
+            { id: 'mock-1', title: '復古相機 AE-1', category: '攝影', description: '經典手動單眼底片相機，記錄溫暖復古的生活感。', image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80', likes: 12, isBookmarked: true, date: '2026-05-18', timestamp: Date.now() - 100000 },
+            { id: 'mock-2', title: '客製青軸機械鍵盤', category: '科技', description: '流暢的青軸打字聲，多層金屬質感外殼與客製鍵帽。', image: 'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80', likes: 8, isBookmarked: false, date: '2026-05-19', timestamp: Date.now() }
+        ];
 
         // === DOM Elements ===
         const els = {
@@ -415,7 +440,7 @@
             snackbarContainer: document.getElementById('snackbar-container')
         };
 
-        // Initialize Icons
+        // 初始化圖示
         lucide.createIcons();
 
         // === Haptic Feedback ===
@@ -437,111 +462,196 @@
             setTimeout(() => { if (sb.parentNode) sb.remove(); }, 3000);
         }
 
-        // === Theme Management ===
-        function toggleTheme() {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('theme-switch-bg')?.classList.replace('bg-md3-l_surfaceContainerHigh', 'bg-md3-d_primary');
-                document.getElementById('theme-switch-knob')?.classList.replace('translate-x-0', 'translate-x-4');
-                document.getElementById('theme-switch-knob')?.classList.replace('bg-[#6F797A]', 'bg-[#00363D]');
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.getElementById('theme-switch-bg')?.classList.replace('bg-md3-d_primary', 'bg-md3-l_surfaceContainerHigh');
-                document.getElementById('theme-switch-knob')?.classList.replace('translate-x-4', 'translate-x-0');
-                document.getElementById('theme-switch-knob')?.classList.replace('bg-[#00363D]', 'bg-[#6F797A]');
-            }
-            triggerHaptic();
+        // === Canvas 圖片壓縮引擎 ===
+        function compressAndLoadImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const max_size = 800; // 最大解析度
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) {
+                        if (width > max_size) {
+                            height *= max_size / width;
+                            width = max_size;
+                        }
+                    } else {
+                        if (height > max_size) {
+                            width *= max_size / height;
+                            height = max_size;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // 壓縮為 70% 品質的 JPEG
+                    callback(compressedBase64);
+                };
+            };
         }
-        document.getElementById('btn-toggle-theme-login').onclick = toggleTheme;
-        document.getElementById('btn-toggle-theme').onclick = toggleTheme;
 
-        // === STREAMING_CHUNK: 撰寫優雅的登入/登出漸變與過渡邏輯... ===
-        // === Auth Logic ===
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            
-            // 漸變隱藏 Loading Screen
-            els.loading.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => els.loading.classList.add('hidden'), 700);
+        // === 漸變控制切換過渡 ===
+        function showAppLayout() {
+            els.login.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            setTimeout(() => els.login.classList.add('hidden'), 500);
 
-            if (user) {
-                // 1. 隱藏 Login Screen
-                els.login.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-                setTimeout(() => els.login.classList.add('hidden'), 500);
+            els.mainApp.classList.remove('hidden');
+            setTimeout(() => {
+                els.mainApp.classList.remove('opacity-0', 'translate-y-8');
+            }, 100);
+        }
 
-                // 2. 顯示 Main App (帶有滑動漸變動畫)
-                els.mainApp.classList.remove('hidden');
-                setTimeout(() => {
-                    els.mainApp.classList.remove('opacity-0', 'translate-y-8');
-                }, 100);
-
-                document.getElementById('drawer-avatar').innerText = user.displayName?.[0] || 'U';
-                document.getElementById('drawer-name').innerText = user.displayName || '收藏家';
-                document.getElementById('drawer-email').innerText = user.email || '';
-                setupFirestore();
-                renderUI();
-            } else {
-                // 1. 隱藏 Main App
-                els.mainApp.classList.add('opacity-0', 'translate-y-8');
-                setTimeout(() => els.mainApp.classList.add('hidden'), 500);
-
-                // 2. 顯示 Login Screen
+        function hideAppLayout() {
+            els.mainApp.classList.add('opacity-0', 'translate-y-8');
+            setTimeout(() => {
+                els.mainApp.classList.add('hidden');
                 els.login.classList.remove('hidden');
                 setTimeout(() => {
                     els.login.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
                 }, 100);
+            }, 500);
+        }
 
+        // === STREAMING_CHUNK: Creating dynamic card rendering with double-tap Instagram likes... ===
+        // === Auth logic ===
+        onAuthStateChanged(auth, (user) => {
+            els.loading.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => els.loading.classList.add('hidden'), 700);
+
+            if (user && !isGuestMode) {
+                currentUser = user;
+                showAppLayout();
+                document.getElementById('drawer-avatar').innerText = user.displayName?.[0] || 'U';
+                document.getElementById('drawer-name').innerText = user.displayName || '收藏家';
+                document.getElementById('drawer-email').innerText = user.email || '';
+                setupFirestore();
+            } else if (!isGuestMode) {
+                currentUser = null;
+                hideAppLayout();
                 if (unsubscribeSnapshot) unsubscribeSnapshot();
                 items = [];
             }
         });
 
+        // 登入
         document.getElementById('btn-login').onclick = async () => {
             try {
+                isGuestMode = false;
                 await signInWithPopup(auth, new GoogleAuthProvider());
                 showSnackbar("歡迎回到您的收藏館！");
             } catch (err) {
-                showSnackbar("登入失敗，請重試");
+                console.error("Auth popup blocked or COOP error. Offering guest mode.", err);
+                showSnackbar("驗證視窗被阻擋，建議您點擊「訪客模式」預覽！");
             }
         };
 
-        document.getElementById('btn-logout').onclick = async () => {
-            await signOut(auth);
-            closeDrawer();
-            showSnackbar("已安全登出");
+        // 訪客登入
+        document.getElementById('btn-guest-login').onclick = () => {
+            isGuestMode = true;
+            currentUser = { uid: 'guest-preview', displayName: '訪客體驗帳號', email: 'guest@local.demo' };
+            showSnackbar("已開啟免登入訪客模式！");
+            showAppLayout();
+            document.getElementById('drawer-avatar').innerText = 'G';
+            document.getElementById('drawer-name').innerText = '訪客體驗帳號';
+            document.getElementById('drawer-email').innerText = '資料將儲存於本地瀏覽器';
+            
+            // 讀取本地快取或使用預設資料
+            const localCached = localStorage.getItem('guest_items');
+            if (localCached) {
+                items = JSON.parse(localCached);
+            } else {
+                items = [...defaultMockItems];
+                localStorage.setItem('guest_items', JSON.stringify(items));
+            }
+            renderUI();
         };
 
-        // === Firestore Logic ===
+        // 登出
+        document.getElementById('btn-logout').onclick = async () => {
+            if (isGuestMode) {
+                isGuestMode = false;
+                currentUser = null;
+                items = [];
+                hideAppLayout();
+                closeDrawer();
+                showSnackbar("已結束訪客體驗");
+            } else {
+                await signOut(auth);
+                closeDrawer();
+                showSnackbar("已安全登出");
+            }
+        };
+
+        // === Firestore Setup ===
         function setupFirestore() {
-            if (!currentUser) return;
+            if (!currentUser || isGuestMode) return;
             const itemsRef = collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items');
             unsubscribeSnapshot = onSnapshot(itemsRef, (snapshot) => {
                 items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderUI();
             }, (error) => {
-                showSnackbar("資料同步失敗");
+                showSnackbar("資料同步異常，請確認連線。");
             });
         }
 
-        // === STREAMING_CHUNK: 構建動態卡片、圖片漸顯與點擊骨牌(Staggered)動畫... ===
-        // === Rendering Logic ===
+        // === Instagram 風格雙擊點讚 ===
+        function triggerDoubleTapLike(cardEl, itemId) {
+            const container = cardEl.querySelector('.image-container');
+            if (!container) return;
+
+            // 建立大愛心
+            const burstHeart = document.createElement('div');
+            burstHeart.className = 'absolute inset-0 z-20 flex items-center justify-center pointer-events-none text-red-500 opacity-0';
+            burstHeart.innerHTML = '<i data-lucide="heart" class="w-20 h-20 fill-current animate-heart-burst"></i>';
+            container.appendChild(burstHeart);
+            lucide.createIcons();
+
+            // 移除大愛心
+            setTimeout(() => burstHeart.remove(), 800);
+
+            // 更新按讚數
+            updateLikeCount(itemId);
+        }
+
+        async function updateLikeCount(itemId) {
+            triggerHaptic('heavy');
+            const targetItem = items.find(i => i.id === itemId);
+            if (!targetItem) return;
+
+            const nextLikes = (targetItem.likes || 0) + 1;
+
+            if (isGuestMode) {
+                targetItem.likes = nextLikes;
+                localStorage.setItem('guest_items', JSON.stringify(items));
+                renderUI();
+            } else if (currentUser) {
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', itemId), { likes: nextLikes });
+            }
+        }
+
+        // === STREAMING_CHUNK: Writing the swipe-to-dismiss gesture handling with inertia... ===
+        // === UI 繪製邏輯 ===
         function renderUI() {
-            // Render Categories
+            // 繪製過濾 Chip
             els.categoryFilters.innerHTML = '';
             categories.forEach(cat => {
                 const isSelected = activeCategory === cat;
                 const btn = document.createElement('button');
-                btn.className = `snap-start flex items-center gap-1.5 h-8 px-4.5 rounded-full border ripple transition-all duration-300 ${
-                    isSelected ? 'bg-md3-l_secondaryContainer text-md3-l_onSecondaryContainer dark:bg-md3-d_secondaryContainer dark:text-md3-d_onSecondaryContainer border-transparent scale-105 shadow-sm' 
+                btn.className = `snap-start flex items-center gap-1.5 h-8 px-4.5 rounded-full border ripple transition-spring ${
+                    isSelected ? 'bg-md3-l_secondaryContainer text-md3-l_onSecondaryContainer dark:bg-md3-d_secondaryContainer dark:text-md3-d_onSecondaryContainer border-transparent scale-105 shadow-sm font-semibold' 
                                : 'bg-transparent border-md3-l_outlineVariant/30 dark:border-md3-d_outlineVariant/30 text-md3-l_textVariant dark:text-md3-d_textVariant hover:bg-black/5 dark:hover:bg-white/5'
                 }`;
-                btn.innerHTML = `${isSelected ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}<span class="text-[14px] font-semibold whitespace-nowrap">${cat}</span>`;
+                btn.innerHTML = `${isSelected ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}<span class="text-[14px] whitespace-nowrap">${cat}</span>`;
                 btn.onclick = () => { activeCategory = cat; triggerHaptic(); renderUI(); };
                 els.categoryFilters.appendChild(btn);
             });
 
-            // Process Data
+            // 過濾並排序資料
             let processed = items.filter(item => {
                 const matchCat = activeCategory === '全部' || item.category === activeCategory;
                 const matchSearch = (item.title || '').toLowerCase().includes(searchQuery.toLowerCase());
@@ -552,7 +662,6 @@
 
             els.itemCount.innerText = `共 ${processed.length} 件物品`;
 
-            // Render Items
             els.itemsContainer.className = `grid gap-5 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`;
             els.itemsContainer.innerHTML = '';
 
@@ -560,29 +669,31 @@
                 els.itemsContainer.innerHTML = `
                     <div class="col-span-full flex flex-col items-center justify-center py-24 animate-fade-in text-md3-l_textVariant dark:text-md3-d_textVariant">
                         <i data-lucide="compass" class="w-16 h-16 mb-4 opacity-40 animate-pulse"></i>
-                        <h3 class="text-lg font-semibold mb-1">找不到相關物品</h3>
-                        <p class="text-sm opacity-80">試著更換關鍵字或分類</p>
+                        <h3 class="text-lg font-semibold mb-1">找不到相關展品</h3>
+                        <p class="text-sm opacity-80">試著更換關鍵字或分類晶片</p>
                     </div>`;
+                lucide.createIcons();
+                return;
             }
 
             processed.forEach((item, idx) => {
                 const isSelected = selectedItems.has(item.id);
                 const card = document.createElement('div');
-                card.style.animationDelay = `${idx * 40}ms`; // 骨牌交錯延遲
-                card.className = `relative rounded-[28px] overflow-hidden transition-all duration-500 hover:-translate-y-1.5 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border ${
+                card.style.animationDelay = `${idx * 40}ms`;
+                card.className = `relative rounded-[28px] overflow-hidden transition-spring hover:-translate-y-1.5 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border ${
                     isSelected ? 'bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer border-md3-l_primary/30 dark:border-md3-d_primary/30 shadow-md' 
-                               : 'bg-[#FAFDFD]/70 dark:bg-[#1A2020]/70 backdrop-blur-md border-white/20 dark:border-white/5 shadow-sm hover:shadow-lg hover:shadow-md3-l_primary/5 dark:hover:shadow-[#4FD8EB]/5'
+                               : 'bg-[#FAFDFD]/70 dark:bg-[#1A2020]/70 backdrop-blur-md border-white/20 dark:border-white/5 shadow-sm hover:shadow-lg hover:shadow-md3-l_primary/5'
                 } ${viewMode === 'list' ? 'flex-row items-center p-4 gap-5' : ''}`;
                 
                 card.innerHTML = `
                     ${isSelected ? `<div class="absolute inset-0 bg-black/15 z-10 flex items-center justify-center pointer-events-none"><div class="w-10 h-10 rounded-full flex items-center justify-center bg-md3-l_primary text-md3-l_onPrimary dark:bg-md3-d_primary dark:text-md3-d_onPrimary animate-pop"><i data-lucide="check" class="w-6 h-6"></i></div></div>` : ''}
-                    <div class="relative overflow-hidden shrink-0 bg-black/5 dark:bg-white/5 rounded-[22px] transition-all duration-500 group ${viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24'}">
-                        <img src="${item.image}" class="w-full h-full object-cover opacity-0 transition-opacity duration-700 hover:scale-105 transform duration-700 ease-m3-standard" onload="this.classList.remove('opacity-0')">
+                    <div class="image-container relative overflow-hidden shrink-0 bg-black/5 dark:bg-white/5 rounded-[22px] transition-all duration-500 group ${viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24'}">
+                        <img src="${item.image}" class="w-full h-full object-cover opacity-0 transition-opacity duration-700 hover:scale-105 transform ease-m3-standard" onerror="this.src='https://placehold.co/400x400/ecefef/191c1c?text=No+Image'" onload="this.classList.remove('opacity-0')">
                     </div>
                     <div class="flex flex-col justify-between ${viewMode === 'grid' ? 'p-5 flex-1' : 'flex-1 py-1 pr-2'}">
                         <div>
-                            <h3 class="font-bold text-[17px] leading-snug tracking-wide line-clamp-1 group-hover:text-md3-l_primary transition-colors">${item.title}</h3>
-                            <p class="text-[14px] line-clamp-2 leading-relaxed mb-4 mt-1 text-md3-l_textVariant dark:text-md3-d_textVariant">${item.description}</p>
+                            <h3 class="font-bold text-[17px] leading-snug tracking-wide line-clamp-1">${item.title}</h3>
+                            <p class="text-[14px] line-clamp-2 leading-relaxed mb-4 mt-1 text-md3-l_textVariant dark:text-md3-d_textVariant">${item.description || '點擊閱讀完整收藏故事。'}</p>
                         </div>
                         <div class="flex items-center justify-between mt-auto text-md3-l_textVariant dark:text-md3-d_textVariant">
                             <button data-action="like" data-id="${item.id}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all ripple relative z-20">
@@ -596,15 +707,26 @@
                     </div>
                 `;
 
-                // Events
+                // 綁定卡片事件 (單擊、雙擊點讚)
                 card.onclick = (e) => {
-                    if(e.target.closest('button[data-action]')) return;
-                    if (isMultiSelectMode) {
-                        toggleSelection(item.id);
+                    if (e.target.closest('button[data-action]')) return;
+                    
+                    const currentTime = Date.now();
+                    const tapLength = currentTime - lastTapTime;
+                    if (tapLength < 300 && tapLength > 0) {
+                        // 雙擊事件
+                        triggerDoubleTapLike(card, item.id);
                     } else {
-                        openDetail(item);
+                        // 單擊事件
+                        if (isMultiSelectMode) {
+                            toggleSelection(item.id);
+                        } else {
+                            openDetail(item);
+                        }
                     }
+                    lastTapTime = currentTime;
                 };
+
                 card.oncontextmenu = (e) => {
                     e.preventDefault();
                     triggerHaptic('heavy');
@@ -615,31 +737,38 @@
                 els.itemsContainer.appendChild(card);
             });
 
-            // Attach actions
+            // 綁定操作按鈕
             document.querySelectorAll('button[data-action="like"]').forEach(btn => {
-                btn.onclick = async (e) => {
+                btn.onclick = (e) => {
                     e.stopPropagation();
-                    triggerHaptic('heavy');
                     const id = btn.dataset.id;
-                    const item = items.find(i => i.id === id);
-                    if(!item || !currentUser) return;
-                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { likes: (item.likes || 0) + 1 });
+                    updateLikeCount(id);
                 };
             });
+
             document.querySelectorAll('button[data-action="bookmark"]').forEach(btn => {
                 btn.onclick = async (e) => {
                     e.stopPropagation();
                     triggerHaptic();
                     const id = btn.dataset.id;
-                    const item = items.find(i => i.id === id);
-                    if(!item || !currentUser) return;
-                    const newStatus = !item.isBookmarked;
-                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { isBookmarked: newStatus });
-                    showSnackbar(newStatus ? '已加入收藏夾' : '已從收藏夾移除');
+                    const targetItem = items.find(i => i.id === id);
+                    if (!targetItem) return;
+
+                    const nextBookmarked = !targetItem.isBookmarked;
+
+                    if (isGuestMode) {
+                        targetItem.isBookmarked = nextBookmarked;
+                        localStorage.setItem('guest_items', JSON.stringify(items));
+                        renderUI();
+                        showSnackbar(nextBookmarked ? '已加入收藏夾' : '已從收藏夾移除');
+                    } else if (currentUser) {
+                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { isBookmarked: nextBookmarked });
+                        showSnackbar(nextBookmarked ? '已加入收藏夾' : '已從收藏夾移除');
+                    }
                 };
             });
 
-            // Update App Bars
+            // 批次管理 App Bar
             if (isMultiSelectMode) {
                 els.multiSelectBar.classList.remove('-translate-y-full');
                 els.selectCount.innerText = `已選擇 ${selectedItems.size} 項`;
@@ -650,155 +779,28 @@
             lucide.createIcons();
         }
 
-        function toggleSelection(id) {
-            if (selectedItems.has(id)) selectedItems.delete(id);
-            else selectedItems.add(id);
-            if (selectedItems.size === 0) isMultiSelectMode = false;
-            renderUI();
-        }
-
-        document.getElementById('btn-cancel-select').onclick = () => {
-            isMultiSelectMode = false;
-            selectedItems.clear();
-            renderUI();
-        };
-
-        document.getElementById('btn-delete-selected').onclick = async () => {
-            if (!currentUser || selectedItems.size === 0) return;
-            triggerHaptic('heavy');
-            for (let id of selectedItems) {
-                await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id));
-            }
-            showSnackbar(`已刪除 ${selectedItems.size} 件物品`);
-            selectedItems.clear();
-            isMultiSelectMode = false;
-            renderUI();
-        };
-
-        // === STREAMING_CHUNK: 管理底部導覽列與首頁控制項切換... ===
-        // === Interactions (Tabs, Search, View) ===
-        els.navTabs.forEach(tab => {
-            tab.onclick = () => {
-                activeTab = tab.dataset.tab;
-                triggerHaptic();
-                
-                // Update active styles with fluid transitions
-                els.navTabs.forEach(t => {
-                    const indicator = t.querySelector('.nav-indicator');
-                    const text = t.querySelector('.nav-text');
-                    const icon = t.querySelector('i');
-                    if (t.dataset.tab === activeTab) {
-                        indicator.classList.add('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
-                        indicator.classList.remove('bg-transparent');
-                        text.classList.add('text-md3-l_text', 'dark:text-md3-d_text');
-                        text.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                        icon.classList.add('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
-                        icon.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                    } else {
-                        indicator.classList.remove('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
-                        indicator.classList.add('bg-transparent');
-                        text.classList.remove('text-md3-l_text', 'dark:text-md3-d_text');
-                        text.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                        icon.classList.remove('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
-                        icon.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                    }
-                });
-
-                els.homeControls.style.opacity = '0';
-                setTimeout(() => {
-                    els.homeControls.style.display = activeTab === 'home' ? 'block' : 'none';
-                    if (activeTab === 'home') els.homeControls.style.opacity = '1';
-                }, 200);
-
-                els.topBarTitle.innerText = activeTab === 'home' ? '收藏館' : '我的收藏夾';
-                els.topBarLargeTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
-                renderUI();
-            };
-        });
-
-        els.searchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value;
-            els.btnClearSearch.style.display = searchQuery ? 'block' : 'none';
-            renderUI();
-        });
-        els.btnClearSearch.onclick = () => {
-            searchQuery = '';
-            els.searchInput.value = '';
-            els.btnClearSearch.style.display = 'none';
-            renderUI();
-        };
-
-        els.btnToggleView.onclick = () => {
-            viewMode = viewMode === 'grid' ? 'list' : 'grid';
-            els.btnToggleView.innerHTML = `<i data-lucide="${viewMode === 'grid' ? 'list' : 'grid'}" class="w-6 h-6"></i>`;
-            triggerHaptic();
-            renderUI();
-        };
-
-        // === STREAMING_CHUNK: 優化滾動驅動動畫，平滑伸縮 App Bar 與隱藏 FAB... ===
-        // === Scroll Handling ===
-        window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-            const isScrolled = currentScrollY > 50;
-            
-            // App Bar Transition
-            if (isScrolled) {
-                els.topBar.classList.add('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90', 'border-md3-l_outlineVariant/10');
-                els.topBarTitle.classList.remove('opacity-0');
-                els.topBarLargeContainer.classList.add('h-0', 'opacity-0');
-                els.topBarLargeContainer.classList.remove('h-[72px]', 'opacity-100');
-            } else {
-                els.topBar.classList.remove('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90', 'border-md3-l_outlineVariant/10');
-                els.topBarTitle.classList.add('opacity-0');
-                els.topBarLargeContainer.classList.remove('h-0', 'opacity-0');
-                els.topBarLargeContainer.classList.add('h-[72px]', 'opacity-100');
-            }
-
-            // FAB & Bottom Nav Show/Hide
-            if (currentScrollY > lastScrollY + 15 && isScrolled) { // Scrolling Down
-                els.fab.classList.add('translate-y-24', 'opacity-0');
-                els.bottomNav.classList.add('translate-y-full');
-            } else if (currentScrollY < lastScrollY - 15) { // Scrolling Up
-                els.fab.classList.remove('translate-y-24', 'opacity-0');
-                els.bottomNav.classList.remove('translate-y-full');
-            }
-            
-            // FAB shrink on scroll
-            if(isScrolled) {
-                els.fab.classList.add('w-14', 'px-0');
-                els.fab.querySelector('span').classList.add('w-0', 'opacity-0', 'ml-0');
-            } else {
-                els.fab.classList.remove('w-14', 'px-0');
-                els.fab.querySelector('span').classList.remove('w-0', 'opacity-0', 'ml-0');
-            }
-
-            lastScrollY = currentScrollY;
-        }, { passive: true });
-
-        // === STREAMING_CHUNK: 控制 Bottom Sheet 與 Drawer 彈簧(Spring)物理動畫關閉機制... ===
-        // === Modals & Drawers Open / Close with Transitions ===
-        
+        // --- 底部抽屜與表單彈出動畫優化 (避免 hidden 衝突) ---
         function openDrawer() {
             triggerHaptic();
-            els.drawer.classList.remove('hidden');
+            els.drawer.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
-                els.drawer.classList.add('opacity-100');
-                els.drawer.querySelector('#drawer-scrim').classList.add('opacity-100');
+                els.drawer.querySelector('#drawer-scrim').classList.remove('opacity-0');
                 els.drawer.querySelector('.relative').classList.remove('-translate-x-full');
-            }, 50);
+            }, 10);
         }
 
         function closeDrawer() {
-            els.drawer.querySelector('#drawer-scrim').classList.remove('opacity-100');
+            els.drawer.querySelector('#drawer-scrim').classList.add('opacity-0');
             els.drawer.querySelector('.relative').classList.add('-translate-x-full');
-            els.drawer.classList.remove('opacity-100');
-            setTimeout(() => els.drawer.classList.add('hidden'), 500);
+            setTimeout(() => {
+                els.drawer.classList.add('opacity-0', 'pointer-events-none');
+            }, 500);
         }
 
         document.getElementById('btn-open-drawer').onclick = openDrawer;
         document.getElementById('drawer-scrim').onclick = closeDrawer;
 
-        // Reset Add Form
+        // Add Modal 表單重置與開關
         function resetAddForm() {
             document.getElementById('add-title').value = '';
             document.getElementById('add-desc').value = '';
@@ -809,7 +811,7 @@
             document.getElementById('upload-placeholder').classList.remove('hidden');
         }
 
-        // Add Modal
+        // 初始化新增分類選單
         const selectCat = document.getElementById('add-category');
         categories.slice(1).forEach(cat => {
             const opt = document.createElement('option');
@@ -819,21 +821,19 @@
 
         function openAddModal() {
             triggerHaptic();
-            els.addModal.classList.remove('hidden');
+            resetAddForm();
+            els.addModal.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
-                els.addModal.classList.add('opacity-100');
-                els.addModal.querySelector('#add-scrim').classList.add('opacity-100');
+                els.addModal.querySelector('#add-scrim').classList.remove('opacity-0');
                 document.getElementById('add-sheet').classList.remove('translate-y-full');
-            }, 50);
+            }, 10);
         }
 
         function closeAddModal() {
-            els.addModal.querySelector('#add-scrim').classList.remove('opacity-100');
+            els.addModal.querySelector('#add-scrim').classList.add('opacity-0');
             document.getElementById('add-sheet').classList.add('translate-y-full');
-            els.addModal.classList.remove('opacity-100');
             setTimeout(() => {
-                els.addModal.classList.add('hidden');
-                resetAddForm();
+                els.addModal.classList.add('opacity-0', 'pointer-events-none');
             }, 500);
         }
 
@@ -841,21 +841,23 @@
         document.getElementById('add-scrim').onclick = closeAddModal;
         document.getElementById('btn-close-add').onclick = closeAddModal;
 
+        // Image Selection with Compression
         document.getElementById('image-upload-area').onclick = () => document.getElementById('file-input').click();
         document.getElementById('file-input').onchange = (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            if (file.size > 800 * 1024) { showSnackbar("圖片過大，請選擇小於 800KB"); return; }
-            const reader = new FileReader();
-            reader.onload = () => {
-                base64Image = reader.result;
+
+            // 進行自動畫布壓縮 (Canvas Compression)
+            compressAndLoadImage(file, (compressedBase64) => {
+                base64Image = compressedBase64;
                 document.getElementById('upload-preview').src = base64Image;
                 document.getElementById('upload-preview').classList.remove('hidden');
                 document.getElementById('upload-placeholder').classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
+                showSnackbar("圖片已成功縮減壓縮，防出錯");
+            });
         };
 
+        // Submit New Item
         document.getElementById('btn-submit-add').onclick = async (e) => {
             const btn = e.target;
             const title = document.getElementById('add-title').value;
@@ -867,62 +869,72 @@
 
             btn.disabled = true;
             btn.innerText = "上傳中...";
+
+            const newItemData = {
+                id: isGuestMode ? 'guest-' + Date.now() : '',
+                title: title, category: cat, description: desc, image: base64Image, likes: 0, isBookmarked: false,
+                date: new Date().toISOString().split('T')[0], timestamp: Date.now()
+            };
+
             try {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items'), {
-                    title: title, category: cat, description: desc, image: base64Image, likes: 0, isBookmarked: false,
-                    date: new Date().toISOString().split('T')[0], timestamp: Date.now()
-                });
-                showSnackbar("收藏新增成功！");
-                closeAddModal();
+                if (isGuestMode) {
+                    items.unshift(newItemData);
+                    localStorage.setItem('guest_items', JSON.stringify(items));
+                    renderUI();
+                    showSnackbar("訪客收藏新增成功！");
+                    closeAddModal();
+                } else {
+                    await addDoc(collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items'), newItemData);
+                    showSnackbar("雲端收藏新增成功！");
+                    closeAddModal();
+                }
             } catch(err) {
-                showSnackbar("新增失敗");
+                showSnackbar("儲存發生異常");
             } finally {
                 btn.disabled = false;
                 btn.innerText = "儲存收藏";
             }
         };
 
-        // Detail Modal
+        // Detail View Modal Control
         function openDetail(item) {
             triggerHaptic();
             currentDetailItem = item;
             document.getElementById('detail-image').src = item.image;
+            document.getElementById('detail-image').onerror = function() {
+                this.src = 'https://placehold.co/400x400/ecefef/191c1c?text=No+Image';
+            };
             document.getElementById('detail-title').innerText = item.title;
             document.getElementById('detail-category').innerText = item.category;
             document.getElementById('detail-date').innerText = item.date;
-            document.getElementById('detail-desc').innerText = item.description;
+            document.getElementById('detail-desc').innerText = item.description || '暫無描述。';
             document.getElementById('detail-like-count').innerText = item.likes || 0;
             
             const likeIcon = document.getElementById('detail-like-icon');
-            if (item.likes > 0) {
-                likeIcon.className = 'w-5 h-5 fill-[#BA1A1A] text-[#BA1A1A]';
-            } else {
-                likeIcon.className = 'w-5 h-5';
-            }
+            likeIcon.className = `w-5 h-5 transition-all ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}`;
             
-            els.detailModal.classList.remove('hidden');
+            els.detailModal.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
-                els.detailModal.classList.add('opacity-100');
-                els.detailModal.querySelector('#detail-scrim').classList.add('opacity-100');
+                els.detailModal.querySelector('#detail-scrim').classList.remove('opacity-0');
                 document.getElementById('detail-sheet').classList.remove('translate-y-full');
-            }, 50);
+            }, 10);
         }
 
         function closeDetail() {
-            els.detailModal.querySelector('#detail-scrim').classList.remove('opacity-100');
+            els.detailModal.querySelector('#detail-scrim').classList.add('opacity-0');
             document.getElementById('detail-sheet').classList.add('translate-y-full');
-            els.detailModal.classList.remove('opacity-100');
-            setTimeout(() => els.detailModal.classList.add('hidden'), 500);
+            setTimeout(() => {
+                els.detailModal.classList.add('opacity-0', 'pointer-events-none');
+            }, 500);
         }
 
         document.getElementById('detail-scrim').onclick = closeDetail;
         document.getElementById('btn-close-detail').onclick = closeDetail;
 
         document.getElementById('btn-detail-like').onclick = async () => {
-            if(!currentDetailItem || !currentUser) return;
+            if(!currentDetailItem) return;
             triggerHaptic('heavy');
             
-            // 前端立即累加，確保連點流暢度
             currentDetailItem.likes = (currentDetailItem.likes || 0) + 1;
             document.getElementById('detail-like-count').innerText = currentDetailItem.likes;
             
@@ -930,13 +942,17 @@
             likeIcon.className = 'w-5 h-5 fill-[#BA1A1A] text-[#BA1A1A] animate-pop';
             setTimeout(() => likeIcon.classList.remove('animate-pop'), 300);
 
-            // 背景寫入 Firestore
-            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', currentDetailItem.id), { 
-                likes: currentDetailItem.likes 
-            });
+            if (isGuestMode) {
+                localStorage.setItem('guest_items', JSON.stringify(items));
+                renderUI();
+            } else if (currentUser) {
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', currentDetailItem.id), { 
+                    likes: currentDetailItem.likes 
+                });
+            }
         };
 
-        // Swipe to dismiss helper
+        // Swipe-to-dismiss drag handle physics
         function setupSwipeToDismiss(handleId, sheetId, closeCallback) {
             const handle = document.getElementById(handleId);
             const sheet = document.getElementById(sheetId);
@@ -969,6 +985,96 @@
         }
         setupSwipeToDismiss('add-drag-handle', 'add-sheet', closeAddModal);
         setupSwipeToDismiss('detail-drag-handle', 'detail-sheet', closeDetail);
+
+        // --- Tabs Selection, Search and Scrolling ---
+        els.navTabs.forEach(tab => {
+            tab.onclick = () => {
+                activeTab = tab.dataset.tab;
+                triggerHaptic();
+                
+                els.navTabs.forEach(t => {
+                    const indicator = t.querySelector('.nav-indicator');
+                    const text = t.querySelector('.nav-text');
+                    const icon = t.querySelector('i');
+                    if (t.dataset.tab === activeTab) {
+                        indicator.classList.add('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
+                        indicator.classList.remove('bg-transparent');
+                        text.classList.add('text-md3-l_text', 'dark:text-md3-d_text');
+                        text.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                        icon.classList.add('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
+                    } else {
+                        indicator.classList.remove('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
+                        indicator.classList.add('bg-transparent');
+                        text.classList.remove('text-md3-l_text', 'dark:text-md3-d_text');
+                        text.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
+                        icon.classList.remove('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
+                    }
+                });
+
+                els.homeControls.style.display = activeTab === 'home' ? 'block' : 'none';
+                els.topBarTitle.innerText = activeTab === 'home' ? '收藏館' : '我的收藏夾';
+                els.topBarLargeTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
+                renderUI();
+            };
+        });
+
+        // Search inputs
+        els.searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            els.btnClearSearch.style.display = searchQuery ? 'block' : 'none';
+            renderUI();
+        });
+        els.btnClearSearch.onclick = () => {
+            searchQuery = '';
+            els.searchInput.value = '';
+            els.btnClearSearch.style.display = 'none';
+            renderUI();
+        };
+
+        // Grid/List toggle
+        els.btnToggleView.onclick = () => {
+            viewMode = viewMode === 'grid' ? 'list' : 'grid';
+            els.btnToggleView.innerHTML = `<i data-lucide="${viewMode === 'grid' ? 'list' : 'grid'}" class="w-6 h-6"></i>`;
+            triggerHaptic();
+            renderUI();
+        };
+
+        // Scroll listener to hide elements & minimize AppBar
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            const isScrolled = currentScrollY > 50;
+            
+            if (isScrolled) {
+                els.topBar.classList.add('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
+                els.topBarTitle.classList.remove('opacity-0');
+                els.topBarLargeContainer.classList.add('h-0', 'opacity-0');
+            } else {
+                els.topBar.classList.remove('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
+                els.topBarTitle.classList.add('opacity-0');
+                els.topBarLargeContainer.classList.remove('h-0', 'opacity-0');
+            }
+
+            // Collapse FAB & hide navigation on scroll down
+            if (currentScrollY > lastScrollY + 15 && isScrolled) {
+                els.fab.classList.add('translate-y-24', 'opacity-0');
+                els.bottomNav.classList.add('translate-y-full');
+            } else if (currentScrollY < lastScrollY - 15) {
+                els.fab.classList.remove('translate-y-24', 'opacity-0');
+                els.bottomNav.classList.remove('translate-y-full');
+            }
+            
+            if(isScrolled) {
+                els.fab.classList.add('w-14', 'px-0');
+                const span = els.fab.querySelector('span');
+                if(span) span.classList.add('w-0', 'opacity-0', 'ml-0');
+            } else {
+                els.fab.classList.remove('w-14', 'px-0');
+                const span = els.fab.querySelector('span');
+                if(span) span.classList.remove('w-0', 'opacity-0', 'ml-0');
+            }
+
+            lastScrollY = currentScrollY;
+        }, { passive: true });
 
     </script>
 </body>
