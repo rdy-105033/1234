@@ -327,6 +327,7 @@
         let currentDetailItem = null;
         let unsubscribeSnapshot = null;
         let base64Image = '';
+        let lastScrollY = window.scrollY || 0; // 統一移至此處，並初始化當前位置
 
         const categories = ['全部', '攝影', '科技', '藝術', '音樂', '生活', '古董'];
 
@@ -671,10 +672,10 @@
             }
 
             // FAB & Bottom Nav
-            if (currentScrollY > lastScrollY.current + 10 && isScrolled) { // Down
+            if (currentScrollY > lastScrollY + 10 && isScrolled) { // Down
                 els.fab.classList.add('translate-y-24', 'opacity-0');
                 els.bottomNav.classList.add('translate-y-full');
-            } else if (currentScrollY < lastScrollY.current - 10) { // Up
+            } else if (currentScrollY < lastScrollY - 10) { // Up
                 els.fab.classList.remove('translate-y-24', 'opacity-0');
                 els.bottomNav.classList.remove('translate-y-full');
             }
@@ -688,9 +689,8 @@
                 els.fab.querySelector('span').classList.remove('w-0', 'opacity-0', 'ml-0');
             }
 
-            lastScrollY.current = currentScrollY;
+            lastScrollY = currentScrollY;
         }, { passive: true });
-        lastScrollY.current = 0;
 
         // === Modals & Drawers ===
         document.getElementById('btn-open-drawer').onclick = () => els.drawer.classList.remove('hidden');
