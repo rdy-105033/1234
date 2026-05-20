@@ -134,14 +134,14 @@
     </div>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="hidden fixed inset-0 flex flex-col items-center justify-center p-6 bg-md3-l_bg dark:bg-md3-d_bg z-[150] transition-all duration-700 ease-m3-standard">
+    <div id="login-screen" class="fixed inset-0 flex flex-col items-center justify-center p-6 bg-md3-l_bg dark:bg-md3-d_bg z-[150] transition-all duration-700 ease-m3-standard">
         <div class="max-w-md w-full flex flex-col items-center p-8 rounded-[36px] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-xl shadow-2xl transition-all hover:scale-[1.01]">
             <div class="p-6 rounded-[28px] mb-8 bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer shadow-lg shadow-md3-l_primary/10">
                 <i data-lucide="compass" class="w-16 h-16 animate-pulse"></i>
             </div>
             <h1 class="text-4xl font-light tracking-tight mb-4 text-center">現代收藏館</h1>
             <p class="text-center mb-10 text-md3-l_textVariant dark:text-md3-d_textVariant max-w-xs text-[15px] leading-relaxed">
-                打造專屬於您的數位收藏空間。<br/>請登入以同步您的雲端資料庫。
+                打造專專屬於您的數位收藏空間。<br/>請登入以同步您的雲端資料庫。
             </p>
             <div class="w-full space-y-3">
                 <button id="btn-login" class="w-full flex items-center justify-center gap-4 px-6 py-4.5 rounded-full shadow-lg active:scale-95 hover:shadow-xl transition-all duration-300 ripple bg-md3-l_primaryContainer text-md3-l_onPrimaryContainer dark:bg-md3-d_primaryContainer dark:text-md3-d_onPrimaryContainer hover:brightness-105">
@@ -384,9 +384,16 @@
             messagingSenderId: "568949229288",
             appId: "1:568949229288:web:f7de05f062ec94c4b82b5d"
         };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (firebaseErr) {
+            console.error("Firebase SDK init failed. Operating in fallback Guest mode.", firebaseErr);
+        }
+
         const APP_ID = 'modern-collection-app';
 
         // === State ===
@@ -413,35 +420,22 @@
             { id: 'mock-2', title: '客製青軸機械鍵盤', category: '科技', description: '流暢的青軸打字聲，多層金屬質感外殼與客製鍵帽。', image: 'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=800&q=80', likes: 8, isBookmarked: false, date: '2026-05-19', timestamp: Date.now() }
         ];
 
-        // === DOM Elements ===
-        const els = {
-            loading: document.getElementById('loading-screen'),
-            login: document.getElementById('login-screen'),
-            mainApp: document.getElementById('main-app'),
-            topBar: document.getElementById('top-app-bar'),
-            topBarTitle: document.getElementById('top-bar-title'),
-            topBarLargeContainer: document.getElementById('top-bar-large-title-container'),
-            topBarLargeTitle: document.getElementById('top-bar-large-title'),
-            multiSelectBar: document.getElementById('multi-select-bar'),
-            selectCount: document.getElementById('select-count'),
-            homeControls: document.getElementById('home-controls'),
-            searchInput: document.getElementById('search-input'),
-            btnClearSearch: document.getElementById('btn-clear-search'),
-            categoryFilters: document.getElementById('category-filters'),
-            itemCount: document.getElementById('item-count'),
-            btnToggleView: document.getElementById('btn-toggle-view'),
-            itemsContainer: document.getElementById('items-container'),
-            fab: document.getElementById('fab-add'),
-            bottomNav: document.getElementById('bottom-nav'),
-            navTabs: document.querySelectorAll('.nav-tab'),
-            drawer: document.getElementById('drawer'),
-            addModal: document.getElementById('add-modal'),
-            detailModal: document.getElementById('detail-modal'),
-            snackbarContainer: document.getElementById('snackbar-container')
-        };
-
         // 初始化圖示
         lucide.createIcons();
+
+        // === 防禦性事件繫結工具 ===
+        function bindClick(id, callback) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('click', (e) => {
+                    try {
+                        callback(e);
+                    } catch (err) {
+                        console.error(`Click handler failed on #${id}:`, err);
+                    }
+                });
+            }
+        }
 
         // === Haptic Feedback ===
         function triggerHaptic(type = 'light') {
@@ -453,12 +447,14 @@
 
         // === Snackbar ===
         function showSnackbar(message) {
+            const container = document.getElementById('snackbar-container');
+            if (!container) return;
             const id = Date.now();
             const sb = document.createElement('div');
             sb.className = 'bg-[#313033] dark:bg-[#E6E1E5] text-[#F4EFF4] dark:text-[#313033] px-5 py-3.5 rounded-2xl shadow-xl flex justify-between items-center animate-fade-in-up pointer-events-auto border border-white/10';
             sb.innerHTML = `<span class="text-[14px] font-semibold">${message}</span><button class="text-[#D0BCFF] dark:text-[#6750A4] text-[14px] font-semibold hover:opacity-80 active:scale-95 ml-4">關閉</button>`;
             sb.querySelector('button').onclick = () => sb.remove();
-            els.snackbarContainer.appendChild(sb);
+            container.appendChild(sb);
             setTimeout(() => { if (sb.parentNode) sb.remove(); }, 3000);
         }
 
@@ -497,68 +493,105 @@
 
         // === 漸變控制切換過渡 ===
         function showAppLayout() {
-            els.login.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-            setTimeout(() => els.login.classList.add('hidden'), 500);
-
-            els.mainApp.classList.remove('hidden');
-            setTimeout(() => {
-                els.mainApp.classList.remove('opacity-0', 'translate-y-8');
-            }, 100);
+            const login = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+            if (login) {
+                login.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                setTimeout(() => login.classList.add('hidden'), 500);
+            }
+            if (mainApp) {
+                mainApp.classList.remove('hidden');
+                setTimeout(() => {
+                    mainApp.classList.remove('opacity-0', 'translate-y-8');
+                }, 100);
+            }
         }
 
         function hideAppLayout() {
-            els.mainApp.classList.add('opacity-0', 'translate-y-8');
-            setTimeout(() => {
-                els.mainApp.classList.add('hidden');
-                els.login.classList.remove('hidden');
+            const login = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+            if (mainApp) {
+                mainApp.classList.add('opacity-0', 'translate-y-8');
+                setTimeout(() => mainApp.classList.add('hidden'), 500);
+            }
+            if (login) {
                 setTimeout(() => {
-                    els.login.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
-                }, 100);
-            }, 500);
+                    login.classList.remove('hidden');
+                    setTimeout(() => {
+                        login.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                    }, 100);
+                }, 500);
+            }
         }
 
-        // === STREAMING_CHUNK: Creating dynamic card rendering with double-tap Instagram likes... ===
         // === Auth logic ===
-        onAuthStateChanged(auth, (user) => {
-            els.loading.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => els.loading.classList.add('hidden'), 700);
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                const loading = document.getElementById('loading-screen');
+                if (loading) {
+                    loading.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => loading.classList.add('hidden'), 700);
+                }
 
-            if (user && !isGuestMode) {
-                currentUser = user;
-                showAppLayout();
-                document.getElementById('drawer-avatar').innerText = user.displayName?.[0] || 'U';
-                document.getElementById('drawer-name').innerText = user.displayName || '收藏家';
-                document.getElementById('drawer-email').innerText = user.email || '';
-                setupFirestore();
-            } else if (!isGuestMode) {
-                currentUser = null;
-                hideAppLayout();
-                if (unsubscribeSnapshot) unsubscribeSnapshot();
-                items = [];
+                if (user && !isGuestMode) {
+                    currentUser = user;
+                    showAppLayout();
+                    const avatar = document.getElementById('drawer-avatar');
+                    const name = document.getElementById('drawer-name');
+                    const email = document.getElementById('drawer-email');
+                    if (avatar) avatar.innerText = user.displayName?.[0] || 'U';
+                    if (name) name.innerText = user.displayName || '收藏家';
+                    if (email) email.innerText = user.email || '';
+                    setupFirestore();
+                } else if (!isGuestMode) {
+                    currentUser = null;
+                    hideAppLayout();
+                    if (unsubscribeSnapshot) {
+                        unsubscribeSnapshot();
+                        unsubscribeSnapshot = null;
+                    }
+                    items = [];
+                }
+            });
+        } else {
+            // Firebase 未就緒時，自動隱藏 Loading 畫面
+            const loading = document.getElementById('loading-screen');
+            if (loading) {
+                loading.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => loading.classList.add('hidden'), 700);
             }
-        });
+        }
 
         // 登入
-        document.getElementById('btn-login').onclick = async () => {
+        bindClick('btn-login', async () => {
+            if (!auth) {
+                showSnackbar("驗證系統不可用，請以訪客身份體驗！");
+                return;
+            }
             try {
                 isGuestMode = false;
                 await signInWithPopup(auth, new GoogleAuthProvider());
                 showSnackbar("歡迎回到您的收藏館！");
             } catch (err) {
-                console.error("Auth popup blocked or COOP error. Offering guest mode.", err);
-                showSnackbar("驗證視窗被阻擋，建議您點擊「訪客模式」預覽！");
+                console.error("Auth popup error:", err);
+                showSnackbar("驗證視窗遭瀏覽器阻擋，已為您自動開啟「訪客體驗」模式！");
+                triggerGuestLogin();
             }
-        };
+        });
 
         // 訪客登入
-        document.getElementById('btn-guest-login').onclick = () => {
+        function triggerGuestLogin() {
             isGuestMode = true;
             currentUser = { uid: 'guest-preview', displayName: '訪客體驗帳號', email: 'guest@local.demo' };
             showSnackbar("已開啟免登入訪客模式！");
             showAppLayout();
-            document.getElementById('drawer-avatar').innerText = 'G';
-            document.getElementById('drawer-name').innerText = '訪客體驗帳號';
-            document.getElementById('drawer-email').innerText = '資料將儲存於本地瀏覽器';
+            
+            const avatar = document.getElementById('drawer-avatar');
+            const name = document.getElementById('drawer-name');
+            const email = document.getElementById('drawer-email');
+            if (avatar) avatar.innerText = 'G';
+            if (name) name.innerText = '訪客體驗帳號';
+            if (email) email.innerText = '資料將儲存於本地瀏覽器';
             
             // 讀取本地快取或使用預設資料
             const localCached = localStorage.getItem('guest_items');
@@ -569,10 +602,11 @@
                 localStorage.setItem('guest_items', JSON.stringify(items));
             }
             renderUI();
-        };
+        }
+        bindClick('btn-guest-login', triggerGuestLogin);
 
         // 登出
-        document.getElementById('btn-logout').onclick = async () => {
+        bindClick('btn-logout', async () => {
             if (isGuestMode) {
                 isGuestMode = false;
                 currentUser = null;
@@ -580,16 +614,28 @@
                 hideAppLayout();
                 closeDrawer();
                 showSnackbar("已結束訪客體驗");
+            } else if (auth) {
+                try {
+                    await signOut(auth);
+                    closeDrawer();
+                    showSnackbar("已安全登出");
+                } catch (err) {
+                    console.error("Signout error:", err);
+                    showSnackbar("登出失敗，請重試");
+                }
             } else {
-                await signOut(auth);
+                // 防禦性回調
+                isGuestMode = false;
+                currentUser = null;
+                items = [];
+                hideAppLayout();
                 closeDrawer();
-                showSnackbar("已安全登出");
             }
-        };
+        });
 
         // === Firestore Setup ===
         function setupFirestore() {
-            if (!currentUser || isGuestMode) return;
+            if (!currentUser || isGuestMode || !db) return;
             const itemsRef = collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items');
             unsubscribeSnapshot = onSnapshot(itemsRef, (snapshot) => {
                 items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -629,27 +675,46 @@
                 targetItem.likes = nextLikes;
                 localStorage.setItem('guest_items', JSON.stringify(items));
                 renderUI();
-            } else if (currentUser) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', itemId), { likes: nextLikes });
+            } else if (currentUser && db) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', itemId), { likes: nextLikes });
+                } catch (err) {
+                    console.error("Like update failed:", err);
+                }
             }
         }
 
-        // === STREAMING_CHUNK: Writing the swipe-to-dismiss gesture handling with inertia... ===
+        // === 多選機制 ===
+        function toggleSelection(itemId) {
+            if (selectedItems.has(itemId)) {
+                selectedItems.delete(itemId);
+            } else {
+                selectedItems.add(itemId);
+            }
+            if (selectedItems.size === 0) {
+                isMultiSelectMode = false;
+            }
+            renderUI();
+        }
+
         // === UI 繪製邏輯 ===
         function renderUI() {
             // 繪製過濾 Chip
-            els.categoryFilters.innerHTML = '';
-            categories.forEach(cat => {
-                const isSelected = activeCategory === cat;
-                const btn = document.createElement('button');
-                btn.className = `snap-start flex items-center gap-1.5 h-8 px-4.5 rounded-full border ripple transition-spring ${
-                    isSelected ? 'bg-md3-l_secondaryContainer text-md3-l_onSecondaryContainer dark:bg-md3-d_secondaryContainer dark:text-md3-d_onSecondaryContainer border-transparent scale-105 shadow-sm font-semibold' 
-                               : 'bg-transparent border-md3-l_outlineVariant/30 dark:border-md3-d_outlineVariant/30 text-md3-l_textVariant dark:text-md3-d_textVariant hover:bg-black/5 dark:hover:bg-white/5'
-                }`;
-                btn.innerHTML = `${isSelected ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}<span class="text-[14px] whitespace-nowrap">${cat}</span>`;
-                btn.onclick = () => { activeCategory = cat; triggerHaptic(); renderUI(); };
-                els.categoryFilters.appendChild(btn);
-            });
+            const filters = document.getElementById('category-filters');
+            if (filters) {
+                filters.innerHTML = '';
+                categories.forEach(cat => {
+                    const isSelected = activeCategory === cat;
+                    const btn = document.createElement('button');
+                    btn.className = `snap-start flex items-center gap-1.5 h-8 px-4.5 rounded-full border ripple transition-spring ${
+                        isSelected ? 'bg-md3-l_secondaryContainer text-md3-l_onSecondaryContainer dark:bg-md3-d_secondaryContainer dark:text-md3-d_onSecondaryContainer border-transparent scale-105 shadow-sm font-semibold' 
+                                   : 'bg-transparent border-md3-l_outlineVariant/30 dark:border-md3-d_outlineVariant/30 text-md3-l_textVariant dark:text-md3-d_textVariant hover:bg-black/5 dark:hover:bg-white/5'
+                    }`;
+                    btn.innerHTML = `${isSelected ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}<span class="text-[14px] whitespace-nowrap">${cat}</span>`;
+                    btn.onclick = () => { activeCategory = cat; triggerHaptic(); renderUI(); };
+                    filters.appendChild(btn);
+                });
+            }
 
             // 過濾並排序資料
             let processed = items.filter(item => {
@@ -660,84 +725,88 @@
             });
             processed.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-            els.itemCount.innerText = `共 ${processed.length} 件物品`;
-
-            els.itemsContainer.className = `grid gap-5 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`;
-            els.itemsContainer.innerHTML = '';
-
-            if (processed.length === 0) {
-                els.itemsContainer.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-24 animate-fade-in text-md3-l_textVariant dark:text-md3-d_textVariant">
-                        <i data-lucide="compass" class="w-16 h-16 mb-4 opacity-40 animate-pulse"></i>
-                        <h3 class="text-lg font-semibold mb-1">找不到相關展品</h3>
-                        <p class="text-sm opacity-80">試著更換關鍵字或分類晶片</p>
-                    </div>`;
-                lucide.createIcons();
-                return;
+            const itemCount = document.getElementById('item-count');
+            if (itemCount) {
+                itemCount.innerText = `共 ${processed.length} 件物品`;
             }
 
-            processed.forEach((item, idx) => {
-                const isSelected = selectedItems.has(item.id);
-                const card = document.createElement('div');
-                card.style.animationDelay = `${idx * 40}ms`;
-                card.className = `relative rounded-[28px] overflow-hidden transition-spring hover:-translate-y-1.5 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border ${
-                    isSelected ? 'bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer border-md3-l_primary/30 dark:border-md3-d_primary/30 shadow-md' 
-                               : 'bg-[#FAFDFD]/70 dark:bg-[#1A2020]/70 backdrop-blur-md border-white/20 dark:border-white/5 shadow-sm hover:shadow-lg hover:shadow-md3-l_primary/5'
-                } ${viewMode === 'list' ? 'flex-row items-center p-4 gap-5' : ''}`;
-                
-                card.innerHTML = `
-                    ${isSelected ? `<div class="absolute inset-0 bg-black/15 z-10 flex items-center justify-center pointer-events-none"><div class="w-10 h-10 rounded-full flex items-center justify-center bg-md3-l_primary text-md3-l_onPrimary dark:bg-md3-d_primary dark:text-md3-d_onPrimary animate-pop"><i data-lucide="check" class="w-6 h-6"></i></div></div>` : ''}
-                    <div class="image-container relative overflow-hidden shrink-0 bg-black/5 dark:bg-white/5 rounded-[22px] transition-all duration-500 group ${viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24'}">
-                        <img src="${item.image}" class="w-full h-full object-cover opacity-0 transition-opacity duration-700 hover:scale-105 transform ease-m3-standard" onerror="this.src='https://placehold.co/400x400/ecefef/191c1c?text=No+Image'" onload="this.classList.remove('opacity-0')">
-                    </div>
-                    <div class="flex flex-col justify-between ${viewMode === 'grid' ? 'p-5 flex-1' : 'flex-1 py-1 pr-2'}">
-                        <div>
-                            <h3 class="font-bold text-[17px] leading-snug tracking-wide line-clamp-1">${item.title}</h3>
-                            <p class="text-[14px] line-clamp-2 leading-relaxed mb-4 mt-1 text-md3-l_textVariant dark:text-md3-d_textVariant">${item.description || '點擊閱讀完整收藏故事。'}</p>
-                        </div>
-                        <div class="flex items-center justify-between mt-auto text-md3-l_textVariant dark:text-md3-d_textVariant">
-                            <button data-action="like" data-id="${item.id}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all ripple relative z-20">
-                                <i data-lucide="heart" class="w-5 h-5 transition-transform active:scale-75 ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}"></i>
-                                <span class="text-[13px] font-semibold">${item.likes || 0}</span>
-                            </button>
-                            <button data-action="bookmark" data-id="${item.id}" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all ripple relative z-20">
-                                <i data-lucide="bookmark" class="w-5 h-5 ${item.isBookmarked ? 'fill-md3-l_primary text-md3-l_primary dark:fill-md3-d_primary dark:text-md3-d_primary' : ''}"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
+            const container = document.getElementById('items-container');
+            if (container) {
+                container.className = `grid gap-5 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`;
+                container.innerHTML = '';
 
-                // 綁定卡片事件 (單擊、雙擊點讚)
-                card.onclick = (e) => {
-                    if (e.target.closest('button[data-action]')) return;
+                if (processed.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full flex flex-col items-center justify-center py-24 animate-fade-in text-md3-l_textVariant dark:text-md3-d_textVariant">
+                            <i data-lucide="compass" class="w-16 h-16 mb-4 opacity-40 animate-pulse"></i>
+                            <h3 class="text-lg font-semibold mb-1">找不到相關展品</h3>
+                            <p class="text-sm opacity-80">試著更換關鍵字或分類晶片</p>
+                        </div>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                processed.forEach((item, idx) => {
+                    const isSelected = selectedItems.has(item.id);
+                    const card = document.createElement('div');
+                    card.style.animationDelay = `${idx * 40}ms`;
+                    card.className = `relative rounded-[28px] overflow-hidden transition-spring hover:-translate-y-1.5 animate-fade-in-up flex flex-col active:scale-[0.98] ripple cursor-pointer border ${
+                        isSelected ? 'bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer border-md3-l_primary/30 dark:border-md3-d_primary/30 shadow-md' 
+                                   : 'bg-[#FAFDFD]/70 dark:bg-[#1A2020]/70 backdrop-blur-md border-white/20 dark:border-white/5 shadow-sm hover:shadow-lg hover:shadow-md3-l_primary/5'
+                    } ${viewMode === 'list' ? 'flex-row items-center p-4 gap-5' : ''}`;
                     
-                    const currentTime = Date.now();
-                    const tapLength = currentTime - lastTapTime;
-                    if (tapLength < 300 && tapLength > 0) {
-                        // 雙擊事件
-                        triggerDoubleTapLike(card, item.id);
-                    } else {
-                        // 單擊事件
-                        if (isMultiSelectMode) {
-                            toggleSelection(item.id);
+                    card.innerHTML = `
+                        ${isSelected ? `<div class="absolute inset-0 bg-black/15 z-10 flex items-center justify-center pointer-events-none"><div class="w-10 h-10 rounded-full flex items-center justify-center bg-md3-l_primary text-md3-l_onPrimary dark:bg-md3-d_primary dark:text-md3-d_onPrimary animate-pop"><i data-lucide="check" class="w-6 h-6"></i></div></div>` : ''}
+                        <div class="image-container relative overflow-hidden shrink-0 bg-black/5 dark:bg-white/5 rounded-[22px] transition-all duration-500 group ${viewMode === 'grid' ? 'aspect-square w-full' : 'w-24 h-24'}">
+                            <img src="${item.image}" class="w-full h-full object-cover opacity-0 transition-opacity duration-700 hover:scale-105 transform ease-m3-standard" onerror="this.src='https://placehold.co/400x400/ecefef/191c1c?text=No+Image'" onload="this.classList.remove('opacity-0')">
+                        </div>
+                        <div class="flex flex-col justify-between ${viewMode === 'grid' ? 'p-5 flex-1' : 'flex-1 py-1 pr-2'}">
+                            <div>
+                                <h3 class="font-bold text-[17px] leading-snug tracking-wide line-clamp-1">${item.title}</h3>
+                                <p class="text-[14px] line-clamp-2 leading-relaxed mb-4 mt-1 text-md3-l_textVariant dark:text-md3-d_textVariant">${item.description || '點擊閱讀完整收藏故事。'}</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-auto text-md3-l_textVariant dark:text-md3-d_textVariant">
+                                <button data-action="like" data-id="${item.id}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all ripple relative z-20">
+                                    <i data-lucide="heart" class="w-5 h-5 transition-transform active:scale-75 ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}"></i>
+                                    <span class="text-[13px] font-semibold">${item.likes || 0}</span>
+                                </button>
+                                <button data-action="bookmark" data-id="${item.id}" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all ripple relative z-20">
+                                    <i data-lucide="bookmark" class="w-5 h-5 ${item.isBookmarked ? 'fill-md3-l_primary text-md3-l_primary dark:fill-md3-d_primary dark:text-md3-d_primary' : ''}"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    // 繫結卡片點擊事件（單擊、雙擊點讚）
+                    card.onclick = (e) => {
+                        if (e.target.closest('button[data-action]')) return;
+                        
+                        const currentTime = Date.now();
+                        const tapLength = currentTime - lastTapTime;
+                        if (tapLength < 300 && tapLength > 0) {
+                            triggerDoubleTapLike(card, item.id);
                         } else {
-                            openDetail(item);
+                            if (isMultiSelectMode) {
+                                toggleSelection(item.id);
+                            } else {
+                                openDetail(item);
+                            }
                         }
-                    }
-                    lastTapTime = currentTime;
-                };
+                        lastTapTime = currentTime;
+                    };
 
-                card.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    triggerHaptic('heavy');
-                    isMultiSelectMode = true;
-                    toggleSelection(item.id);
-                };
+                    card.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        triggerHaptic('heavy');
+                        isMultiSelectMode = true;
+                        toggleSelection(item.id);
+                    };
 
-                els.itemsContainer.appendChild(card);
-            });
+                    container.appendChild(card);
+                });
+            }
 
-            // 綁定操作按鈕
+            // 繫結按鈕操作事件
             document.querySelectorAll('button[data-action="like"]').forEach(btn => {
                 btn.onclick = (e) => {
                     e.stopPropagation();
@@ -761,113 +830,175 @@
                         localStorage.setItem('guest_items', JSON.stringify(items));
                         renderUI();
                         showSnackbar(nextBookmarked ? '已加入收藏夾' : '已從收藏夾移除');
-                    } else if (currentUser) {
-                        await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { isBookmarked: nextBookmarked });
-                        showSnackbar(nextBookmarked ? '已加入收藏夾' : '已從收藏夾移除');
+                    } else if (currentUser && db) {
+                        try {
+                            await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id), { isBookmarked: nextBookmarked });
+                            showSnackbar(nextBookmarked ? '已加入收藏夾' : '已從收藏夾移除');
+                        } catch (err) {
+                            console.error("Bookmark update failed:", err);
+                        }
                     }
                 };
             });
 
             // 批次管理 App Bar
-            if (isMultiSelectMode) {
-                els.multiSelectBar.classList.remove('-translate-y-full');
-                els.selectCount.innerText = `已選擇 ${selectedItems.size} 項`;
-            } else {
-                els.multiSelectBar.classList.add('-translate-y-full');
+            const multiselect = document.getElementById('multi-select-bar');
+            const selectCount = document.getElementById('select-count');
+            if (multiselect && selectCount) {
+                if (isMultiSelectMode) {
+                    multiselect.classList.remove('-translate-y-full');
+                    selectCount.innerText = `已選擇 ${selectedItems.size} 項`;
+                } else {
+                    multiselect.classList.add('-translate-y-full');
+                }
             }
 
             lucide.createIcons();
         }
 
-        // --- 底部抽屜與表單彈出動畫優化 (避免 hidden 衝突) ---
+        // === 底部抽屜控制 ===
         function openDrawer() {
             triggerHaptic();
-            els.drawer.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                els.drawer.querySelector('#drawer-scrim').classList.remove('opacity-0');
-                els.drawer.querySelector('.relative').classList.remove('-translate-x-full');
-            }, 10);
+            const drawer = document.getElementById('drawer');
+            if (drawer) {
+                drawer.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    const scrim = drawer.querySelector('#drawer-scrim');
+                    const content = drawer.querySelector('.relative');
+                    if (scrim) scrim.classList.remove('opacity-0');
+                    if (content) content.classList.remove('-translate-x-full');
+                }, 10);
+            }
         }
 
         function closeDrawer() {
-            els.drawer.querySelector('#drawer-scrim').classList.add('opacity-0');
-            els.drawer.querySelector('.relative').classList.add('-translate-x-full');
-            setTimeout(() => {
-                els.drawer.classList.add('opacity-0', 'pointer-events-none');
-            }, 500);
+            const drawer = document.getElementById('drawer');
+            if (drawer) {
+                const scrim = drawer.querySelector('#drawer-scrim');
+                const content = drawer.querySelector('.relative');
+                if (scrim) scrim.classList.add('opacity-0');
+                if (content) content.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    drawer.classList.add('opacity-0', 'pointer-events-none');
+                }, 500);
+            }
         }
 
-        document.getElementById('btn-open-drawer').onclick = openDrawer;
-        document.getElementById('drawer-scrim').onclick = closeDrawer;
+        bindClick('btn-open-drawer', openDrawer);
+        bindClick('drawer-scrim', closeDrawer);
 
         // Add Modal 表單重置與開關
         function resetAddForm() {
-            document.getElementById('add-title').value = '';
-            document.getElementById('add-desc').value = '';
-            document.getElementById('add-category').selectedIndex = 0;
+            const title = document.getElementById('add-title');
+            const desc = document.getElementById('add-desc');
+            const cat = document.getElementById('add-category');
+            if (title) title.value = '';
+            if (desc) desc.value = '';
+            if (cat) cat.selectedIndex = 0;
             base64Image = '';
-            document.getElementById('upload-preview').classList.add('hidden');
-            document.getElementById('upload-preview').src = '';
-            document.getElementById('upload-placeholder').classList.remove('hidden');
+            
+            const preview = document.getElementById('upload-preview');
+            const placeholder = document.getElementById('upload-placeholder');
+            if (preview) {
+                preview.classList.add('hidden');
+                preview.src = '';
+            }
+            if (placeholder) {
+                placeholder.classList.remove('hidden');
+            }
         }
 
         // 初始化新增分類選單
         const selectCat = document.getElementById('add-category');
-        categories.slice(1).forEach(cat => {
-            const opt = document.createElement('option');
-            opt.value = cat; opt.innerText = cat;
-            selectCat.appendChild(opt);
-        });
+        if (selectCat) {
+            selectCat.innerHTML = '';
+            categories.slice(1).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat; opt.innerText = cat;
+                selectCat.appendChild(opt);
+            });
+        }
 
         function openAddModal() {
             triggerHaptic();
             resetAddForm();
-            els.addModal.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                els.addModal.querySelector('#add-scrim').classList.remove('opacity-0');
-                document.getElementById('add-sheet').classList.remove('translate-y-full');
-            }, 10);
+            const addModal = document.getElementById('add-modal');
+            const addSheet = document.getElementById('add-sheet');
+            if (addModal && addSheet) {
+                addModal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    const scrim = document.getElementById('add-scrim');
+                    if (scrim) scrim.classList.remove('opacity-0');
+                    addSheet.classList.remove('translate-y-full');
+                }, 10);
+            }
         }
 
         function closeAddModal() {
-            els.addModal.querySelector('#add-scrim').classList.add('opacity-0');
-            document.getElementById('add-sheet').classList.add('translate-y-full');
-            setTimeout(() => {
-                els.addModal.classList.add('opacity-0', 'pointer-events-none');
-            }, 500);
+            const addModal = document.getElementById('add-modal');
+            const addSheet = document.getElementById('add-sheet');
+            if (addModal && addSheet) {
+                const scrim = document.getElementById('add-scrim');
+                if (scrim) scrim.classList.add('opacity-0');
+                addSheet.classList.add('translate-y-full');
+                setTimeout(() => {
+                    addModal.classList.add('opacity-0', 'pointer-events-none');
+                }, 500);
+            }
         }
 
-        els.fab.onclick = openAddModal;
-        document.getElementById('add-scrim').onclick = closeAddModal;
-        document.getElementById('btn-close-add').onclick = closeAddModal;
+        bindClick('fab-add', openAddModal);
+        bindClick('add-scrim', closeAddModal);
+        bindClick('btn-close-add', closeAddModal);
 
-        // Image Selection with Compression
-        document.getElementById('image-upload-area').onclick = () => document.getElementById('file-input').click();
-        document.getElementById('file-input').onchange = (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-
-            // 進行自動畫布壓縮 (Canvas Compression)
-            compressAndLoadImage(file, (compressedBase64) => {
-                base64Image = compressedBase64;
-                document.getElementById('upload-preview').src = base64Image;
-                document.getElementById('upload-preview').classList.remove('hidden');
-                document.getElementById('upload-placeholder').classList.add('hidden');
-                showSnackbar("圖片已成功縮減壓縮，防出錯");
+        // 圖片上傳壓縮繫結
+        const uploadArea = document.getElementById('image-upload-area');
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => {
+                const fileInput = document.getElementById('file-input');
+                if (fileInput) fileInput.click();
             });
-        };
+        }
 
-        // Submit New Item
-        document.getElementById('btn-submit-add').onclick = async (e) => {
+        const fileInput = document.getElementById('file-input');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                compressAndLoadImage(file, (compressedBase64) => {
+                    base64Image = compressedBase64;
+                    const preview = document.getElementById('upload-preview');
+                    const placeholder = document.getElementById('upload-placeholder');
+                    if (preview) {
+                        preview.src = base64Image;
+                        preview.classList.remove('hidden');
+                    }
+                    if (placeholder) {
+                        placeholder.classList.add('hidden');
+                    }
+                    showSnackbar("圖片已縮減壓縮，防寫入失敗。");
+                });
+            });
+        }
+
+        // 新增送出收藏
+        bindClick('btn-submit-add', async (e) => {
             const btn = e.target;
-            const title = document.getElementById('add-title').value;
-            const cat = document.getElementById('add-category').value;
-            const desc = document.getElementById('add-desc').value;
+            const addTitle = document.getElementById('add-title');
+            const addCategory = document.getElementById('add-category');
+            const addDesc = document.getElementById('add-desc');
 
-            if(!title || !base64Image) { showSnackbar("請填寫標題並上傳圖片"); return; }
-            if(!currentUser) return;
+            const title = addTitle ? addTitle.value : '';
+            const cat = addCategory ? addCategory.value : '生活';
+            const desc = addDesc ? addDesc.value : '';
+
+            if (!title || !base64Image) {
+                showSnackbar("請填寫標題並上傳圖片");
+                return;
+            }
 
             btn.disabled = true;
+            const originalText = btn.innerText;
             btn.innerText = "上傳中...";
 
             const newItemData = {
@@ -881,81 +1012,120 @@
                     items.unshift(newItemData);
                     localStorage.setItem('guest_items', JSON.stringify(items));
                     renderUI();
-                    showSnackbar("訪客收藏新增成功！");
+                    showSnackbar("本地訪客收藏新增成功！");
                     closeAddModal();
-                } else {
+                } else if (currentUser && db) {
                     await addDoc(collection(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items'), newItemData);
                     showSnackbar("雲端收藏新增成功！");
                     closeAddModal();
+                } else {
+                    // Firebase 不可用時的防禦性降級
+                    items.unshift(newItemData);
+                    localStorage.setItem('guest_items', JSON.stringify(items));
+                    renderUI();
+                    showSnackbar("系統未連線，已將資料存於本地！");
+                    closeAddModal();
                 }
-            } catch(err) {
+            } catch (err) {
+                console.error("Save error:", err);
                 showSnackbar("儲存發生異常");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "儲存收藏";
+                btn.innerText = originalText;
             }
-        };
+        });
 
-        // Detail View Modal Control
+        // 詳細資訊視窗控制
         function openDetail(item) {
             triggerHaptic();
             currentDetailItem = item;
-            document.getElementById('detail-image').src = item.image;
-            document.getElementById('detail-image').onerror = function() {
-                this.src = 'https://placehold.co/400x400/ecefef/191c1c?text=No+Image';
-            };
-            document.getElementById('detail-title').innerText = item.title;
-            document.getElementById('detail-category').innerText = item.category;
-            document.getElementById('detail-date').innerText = item.date;
-            document.getElementById('detail-desc').innerText = item.description || '暫無描述。';
-            document.getElementById('detail-like-count').innerText = item.likes || 0;
             
+            const detailImg = document.getElementById('detail-image');
+            const detailTitle = document.getElementById('detail-title');
+            const detailCat = document.getElementById('detail-category');
+            const detailDate = document.getElementById('detail-date');
+            const detailDesc = document.getElementById('detail-desc');
+            const detailLikes = document.getElementById('detail-like-count');
             const likeIcon = document.getElementById('detail-like-icon');
-            likeIcon.className = `w-5 h-5 transition-all ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}`;
+
+            if (detailImg) {
+                detailImg.src = item.image;
+                detailImg.onerror = function() {
+                    this.src = 'https://placehold.co/400x400/ecefef/191c1c?text=No+Image';
+                };
+            }
+            if (detailTitle) detailTitle.innerText = item.title;
+            if (detailCat) detailCat.innerText = item.category;
+            if (detailDate) detailDate.innerText = item.date;
+            if (detailDesc) detailDesc.innerText = item.description || '暫無描述。';
+            if (detailLikes) detailLikes.innerText = item.likes || 0;
             
-            els.detailModal.classList.remove('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                els.detailModal.querySelector('#detail-scrim').classList.remove('opacity-0');
-                document.getElementById('detail-sheet').classList.remove('translate-y-full');
-            }, 10);
+            if (likeIcon) {
+                likeIcon.className = `w-5 h-5 transition-all ${item.likes > 0 ? 'fill-[#BA1A1A] text-[#BA1A1A]' : ''}`;
+            }
+            
+            const detailModal = document.getElementById('detail-modal');
+            const detailSheet = document.getElementById('detail-sheet');
+            if (detailModal && detailSheet) {
+                detailModal.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    const scrim = document.getElementById('detail-scrim');
+                    if (scrim) scrim.classList.remove('opacity-0');
+                    detailSheet.classList.remove('translate-y-full');
+                }, 10);
+            }
         }
 
         function closeDetail() {
-            els.detailModal.querySelector('#detail-scrim').classList.add('opacity-0');
-            document.getElementById('detail-sheet').classList.add('translate-y-full');
-            setTimeout(() => {
-                els.detailModal.classList.add('opacity-0', 'pointer-events-none');
-            }, 500);
+            const detailModal = document.getElementById('detail-modal');
+            const detailSheet = document.getElementById('detail-sheet');
+            if (detailModal && detailSheet) {
+                const scrim = document.getElementById('detail-scrim');
+                if (scrim) scrim.classList.add('opacity-0');
+                detailSheet.classList.add('translate-y-full');
+                setTimeout(() => {
+                    detailModal.classList.add('opacity-0', 'pointer-events-none');
+                }, 500);
+            }
         }
 
-        document.getElementById('detail-scrim').onclick = closeDetail;
-        document.getElementById('btn-close-detail').onclick = closeDetail;
+        bindClick('detail-scrim', closeDetail);
+        bindClick('btn-close-detail', closeDetail);
 
-        document.getElementById('btn-detail-like').onclick = async () => {
-            if(!currentDetailItem) return;
+        // 詳細畫面的點讚按鈕
+        bindClick('btn-detail-like', async () => {
+            if (!currentDetailItem) return;
             triggerHaptic('heavy');
             
             currentDetailItem.likes = (currentDetailItem.likes || 0) + 1;
-            document.getElementById('detail-like-count').innerText = currentDetailItem.likes;
+            const count = document.getElementById('detail-like-count');
+            if (count) count.innerText = currentDetailItem.likes;
             
             const likeIcon = document.getElementById('detail-like-icon');
-            likeIcon.className = 'w-5 h-5 fill-[#BA1A1A] text-[#BA1A1A] animate-pop';
-            setTimeout(() => likeIcon.classList.remove('animate-pop'), 300);
+            if (likeIcon) {
+                likeIcon.className = 'w-5 h-5 fill-[#BA1A1A] text-[#BA1A1A] animate-pop';
+                setTimeout(() => likeIcon.classList.remove('animate-pop'), 300);
+            }
 
             if (isGuestMode) {
                 localStorage.setItem('guest_items', JSON.stringify(items));
                 renderUI();
-            } else if (currentUser) {
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', currentDetailItem.id), { 
-                    likes: currentDetailItem.likes 
-                });
+            } else if (currentUser && db) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', currentDetailItem.id), { 
+                        likes: currentDetailItem.likes 
+                    });
+                } catch (err) {
+                    console.error("Likes update failed:", err);
+                }
             }
-        };
+        });
 
-        // Swipe-to-dismiss drag handle physics
+        // 滑動手勢功能
         function setupSwipeToDismiss(handleId, sheetId, closeCallback) {
             const handle = document.getElementById(handleId);
             const sheet = document.getElementById(sheetId);
+            if (!handle || !sheet) return;
             let startY = 0;
             let currentY = 0;
 
@@ -986,94 +1156,191 @@
         setupSwipeToDismiss('add-drag-handle', 'add-sheet', closeAddModal);
         setupSwipeToDismiss('detail-drag-handle', 'detail-sheet', closeDetail);
 
-        // --- Tabs Selection, Search and Scrolling ---
-        els.navTabs.forEach(tab => {
-            tab.onclick = () => {
+        // 批次刪除
+        bindClick('btn-delete-selected', async () => {
+            if (selectedItems.size === 0) return;
+            triggerHaptic('heavy');
+            try {
+                if (isGuestMode) {
+                    items = items.filter(x => !selectedItems.has(x.id));
+                    localStorage.setItem('guest_items', JSON.stringify(items));
+                    showSnackbar(`已刪除 ${selectedItems.size} 項本地收藏`);
+                } else if (currentUser && db) {
+                    for (let id of selectedItems) {
+                        await deleteDoc(doc(db, 'artifacts', APP_ID, 'users', currentUser.uid, 'items', id));
+                    }
+                    showSnackbar(`已成功同步刪除 ${selectedItems.size} 項雲端收藏`);
+                }
+                isMultiSelectMode = false;
+                selectedItems.clear();
+                renderUI();
+            } catch (err) {
+                console.error("Batch delete error:", err);
+                showSnackbar("批次刪除失敗，請重新嘗試");
+            }
+        });
+
+        bindClick('btn-cancel-select', () => {
+            isMultiSelectMode = false;
+            selectedItems.clear();
+            renderUI();
+        });
+
+        // 頁籤 Tab 切換
+        const tabs = document.querySelectorAll('.nav-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
                 activeTab = tab.dataset.tab;
                 triggerHaptic();
                 
-                els.navTabs.forEach(t => {
+                tabs.forEach(t => {
                     const indicator = t.querySelector('.nav-indicator');
                     const text = t.querySelector('.nav-text');
                     const icon = t.querySelector('i');
-                    if (t.dataset.tab === activeTab) {
-                        indicator.classList.add('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
-                        indicator.classList.remove('bg-transparent');
-                        text.classList.add('text-md3-l_text', 'dark:text-md3-d_text');
-                        text.classList.remove('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                        icon.classList.add('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
-                    } else {
-                        indicator.classList.remove('bg-md3-l_secondaryContainer', 'dark:bg-md3-d_secondaryContainer', 'scale-105');
-                        indicator.classList.add('bg-transparent');
-                        text.classList.remove('text-md3-l_text', 'dark:text-md3-d_text');
-                        text.classList.add('text-md3-l_textVariant', 'dark:text-md3-d_textVariant');
-                        icon.classList.remove('text-md3-l_onSecondaryContainer', 'dark:text-md3-d_onSecondaryContainer', 'fill-current');
+                    if (indicator && text && icon) {
+                        if (t.dataset.tab === activeTab) {
+                            indicator.className = "nav-indicator w-16 h-8 rounded-full flex items-center justify-center transition-all duration-500 bg-md3-l_secondaryContainer dark:bg-md3-d_secondaryContainer scale-105";
+                            text.className = "nav-text text-[12px] font-semibold tracking-wide text-md3-l_text dark:text-md3-d_text transition-colors duration-300";
+                            icon.className = "w-6 h-6 text-md3-l_onSecondaryContainer dark:text-md3-d_onSecondaryContainer fill-current transition-transform scale-110 duration-300";
+                        } else {
+                            indicator.className = "nav-indicator w-16 h-8 rounded-full flex items-center justify-center transition-all duration-500 bg-transparent";
+                            text.className = "nav-text text-[12px] font-semibold tracking-wide text-md3-l_textVariant dark:text-md3-d_textVariant transition-colors duration-300";
+                            icon.className = "w-6 h-6 text-md3-l_textVariant dark:text-md3-d_textVariant transition-transform duration-300";
+                        }
                     }
                 });
 
-                els.homeControls.style.display = activeTab === 'home' ? 'block' : 'none';
-                els.topBarTitle.innerText = activeTab === 'home' ? '收藏館' : '我的收藏夾';
-                els.topBarLargeTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
+                const controls = document.getElementById('home-controls');
+                const barTitle = document.getElementById('top-bar-title');
+                const largeTitle = document.getElementById('top-bar-large-title');
+                if (controls) controls.style.display = activeTab === 'home' ? 'block' : 'none';
+                if (barTitle) barTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
+                if (largeTitle) largeTitle.innerText = activeTab === 'home' ? '探索收藏' : '我的收藏夾';
                 renderUI();
-            };
+            });
         });
 
-        // Search inputs
-        els.searchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value;
-            els.btnClearSearch.style.display = searchQuery ? 'block' : 'none';
-            renderUI();
-        });
-        els.btnClearSearch.onclick = () => {
+        // 搜尋邏輯
+        const searchInput = document.getElementById('search-input');
+        const clearBtn = document.getElementById('btn-clear-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                if (clearBtn) {
+                    clearBtn.style.display = searchQuery ? 'block' : 'none';
+                }
+                renderUI();
+            });
+        }
+        bindClick('btn-clear-search', () => {
             searchQuery = '';
-            els.searchInput.value = '';
-            els.btnClearSearch.style.display = 'none';
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
             renderUI();
-        };
+        });
 
-        // Grid/List toggle
-        els.btnToggleView.onclick = () => {
+        // 檢視切換 (Grid/List)
+        bindClick('btn-toggle-view', () => {
             viewMode = viewMode === 'grid' ? 'list' : 'grid';
-            els.btnToggleView.innerHTML = `<i data-lucide="${viewMode === 'grid' ? 'list' : 'grid'}" class="w-6 h-6"></i>`;
+            const toggleViewBtn = document.getElementById('btn-toggle-view');
+            if (toggleViewBtn) {
+                toggleViewBtn.innerHTML = `<i data-lucide="${viewMode === 'grid' ? 'list' : 'grid'}" class="w-6 h-6"></i>`;
+            }
             triggerHaptic();
             renderUI();
-        };
+        });
 
-        // Scroll listener to hide elements & minimize AppBar
+        // 主題切換 (深色模式)
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            triggerHaptic();
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+            updateThemeUI();
+        }
+
+        function updateThemeUI() {
+            const knob = document.getElementById('theme-switch-knob');
+            const bg = document.getElementById('theme-switch-bg');
+            if (knob && bg) {
+                if (isDarkMode) {
+                    knob.className = "w-6 h-6 rounded-full shadow transition-transform translate-x-4 bg-[#00363D]";
+                    bg.className = "w-12 h-8 rounded-full flex items-center p-1 transition-colors bg-md3-d_primary";
+                } else {
+                    knob.className = "w-6 h-6 rounded-full shadow transition-transform translate-x-0 bg-[#6F797A]";
+                    bg.className = "w-12 h-8 rounded-full flex items-center p-1 transition-colors bg-md3-l_surfaceContainerHigh";
+                }
+            }
+        }
+
+        bindClick('btn-toggle-theme', toggleTheme);
+        bindClick('btn-toggle-theme-login', toggleTheme);
+
+        // 初始化深色模式偵測
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            isDarkMode = true;
+            document.documentElement.classList.add('dark');
+            updateThemeUI();
+        } else {
+            isDarkMode = false;
+            document.documentElement.classList.remove('dark');
+            updateThemeUI();
+        }
+
+        // 滾動 AppBar 動態與 FAB 縮放優化
         window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-            const isScrolled = currentScrollY > 50;
-            
-            if (isScrolled) {
-                els.topBar.classList.add('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
-                els.topBarTitle.classList.remove('opacity-0');
-                els.topBarLargeContainer.classList.add('h-0', 'opacity-0');
-            } else {
-                els.topBar.classList.remove('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
-                els.topBarTitle.classList.add('opacity-0');
-                els.topBarLargeContainer.classList.remove('h-0', 'opacity-0');
-            }
+            try {
+                const currentScrollY = window.scrollY;
+                const isScrolled = currentScrollY > 50;
+                
+                const topBar = document.getElementById('top-app-bar');
+                const barTitle = document.getElementById('top-bar-title');
+                const largeContainer = document.getElementById('top-bar-large-title-container');
+                const fab = document.getElementById('fab-add');
+                const bottomNav = document.getElementById('bottom-nav');
 
-            // Collapse FAB & hide navigation on scroll down
-            if (currentScrollY > lastScrollY + 15 && isScrolled) {
-                els.fab.classList.add('translate-y-24', 'opacity-0');
-                els.bottomNav.classList.add('translate-y-full');
-            } else if (currentScrollY < lastScrollY - 15) {
-                els.fab.classList.remove('translate-y-24', 'opacity-0');
-                els.bottomNav.classList.remove('translate-y-full');
-            }
-            
-            if(isScrolled) {
-                els.fab.classList.add('w-14', 'px-0');
-                const span = els.fab.querySelector('span');
-                if(span) span.classList.add('w-0', 'opacity-0', 'ml-0');
-            } else {
-                els.fab.classList.remove('w-14', 'px-0');
-                const span = els.fab.querySelector('span');
-                if(span) span.classList.remove('w-0', 'opacity-0', 'ml-0');
-            }
+                if (topBar && barTitle && largeContainer) {
+                    if (isScrolled) {
+                        topBar.classList.add('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
+                        barTitle.classList.remove('opacity-0');
+                        largeContainer.classList.add('h-0', 'opacity-0');
+                    } else {
+                        topBar.classList.remove('shadow-md', 'bg-md3-l_surfaceContainer/90', 'dark:bg-md3-d_surfaceContainer/90');
+                        barTitle.classList.add('opacity-0');
+                        largeContainer.classList.remove('h-0', 'opacity-0');
+                    }
+                }
 
-            lastScrollY = currentScrollY;
+                // 滑動收闔 FAB 與 BottomNav
+                if (fab && bottomNav) {
+                    if (currentScrollY > lastScrollY + 15 && isScrolled) {
+                        fab.classList.add('translate-y-24', 'opacity-0');
+                        bottomNav.classList.add('translate-y-full');
+                    } else if (currentScrollY < lastScrollY - 15) {
+                        fab.classList.remove('translate-y-24', 'opacity-0');
+                        bottomNav.classList.remove('translate-y-full');
+                    }
+                    
+                    if (isScrolled) {
+                        fab.classList.add('w-14', 'px-0');
+                        const span = fab.querySelector('span');
+                        if (span) span.classList.add('w-0', 'opacity-0', 'ml-0');
+                    } else {
+                        fab.classList.remove('w-14', 'px-0');
+                        const span = fab.querySelector('span');
+                        if (span) span.classList.remove('w-0', 'opacity-0', 'ml-0');
+                    }
+                }
+
+                lastScrollY = currentScrollY;
+            } catch (err) {
+                console.error("Scroll event failed silently:", err);
+            }
         }, { passive: true });
 
     </script>
